@@ -1,7 +1,7 @@
 // Clipsy para escritorio (Windows y macOS).
 // Carga la versión web de la app (exportada con `expo export -p web` en ./app) dentro de una
 // ventana nativa, con menús, atajos, bandeja del sistema y notificaciones del sistema.
-const { app, BrowserWindow, Menu, clipboard, Tray, nativeImage, nativeTheme, protocol, net, shell, ipcMain, globalShortcut, screen } = require('electron');
+const { app, BrowserWindow, Menu, clipboard, Tray, nativeImage, nativeTheme, protocol, net, shell, ipcMain, globalShortcut, screen, session } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
@@ -9,6 +9,7 @@ const strings = require('./i18n');
 const license = require('./license');
 const updater = require('./updater');
 const sync = require('./sync');
+const voice = require('./voice');
 
 const APP_DIR = path.join(__dirname, 'app');
 const SCHEME = 'app';
@@ -34,7 +35,9 @@ let quickWin = null;
 let tray = null;
 let trayNext = null; // «Reunión · 10:00»: lo próximo que va a sonar o empezar
 const QUICK_SHORTCUT = 'CommandOrControl+Shift+Space';
+const VOICE_SHORTCUT = 'CommandOrControl+Alt+Space'; // abre la barra rápida ya escuchando
 let quickShortcutOk = false;
+let voiceShortcutOk = false;
 let quitting = false;
 let lang = (app.getLocale() || 'en').slice(0, 2);
 const startHidden = process.argv.includes('--hidden') || (IS_MAC && app.getLoginItemSettings().wasOpenedAtLogin);
@@ -213,11 +216,13 @@ function openMini() {
   guardNavigation(miniWin);
 }
 
-/** Barra de alta rápida (Ctrl/⌘+Shift+Espacio desde cualquier programa). */
-function toggleQuick() {
+/** Barra de alta rápida (Ctrl/⌘+Shift+Espacio desde cualquier programa). Con `listen`, empieza a escuchar. */
+function toggleQuick(listen = false) {
   if (!license.isUnlocked()) return showWindow();
   if (quickWin?.isVisible()) {
-    quickWin.hide();
+    // Con el atajo de voz, la barra abierta empieza o deja de escuchar en vez de cerrarse.
+    if (listen === true) quickWin.webContents.send('razor:quick-voice');
+    else quickWin.hide();
     return;
   }
   if (!quickWin) {
@@ -257,6 +262,7 @@ function toggleQuick() {
     quickWin.show();
     quickWin.focus();
     quickWin.webContents.send('razor:quick-open');
+    if (listen === true) quickWin.webContents.send('razor:quick-voice');
   };
   if (quickWin.webContents.isLoading()) quickWin.webContents.once('did-finish-load', reveal);
   else reveal();
@@ -265,9 +271,16 @@ function toggleQuick() {
 function registerShortcuts() {
   globalShortcut.unregisterAll();
   try {
-    quickShortcutOk = globalShortcut.register(QUICK_SHORTCUT, toggleQuick);
+    quickShortcutOk = globalShortcut.register(QUICK_SHORTCUT, () => toggleQuick());
   } catch {
     quickShortcutOk = false; // otro programa ya usa la combinación
+  }
+  if (voice.supported) {
+    try {
+      voiceShortcutOk = globalShortcut.register(VOICE_SHORTCUT, () => toggleQuick(true));
+    } catch {
+      voiceShortcutOk = false;
+    }
   }
 }
 
@@ -300,7 +313,8 @@ function buildMenu() {
         { label: s.newTransaction, click: () => send('new:transaction') },
         { type: 'separator' },
         { label: s.search, accelerator: 'CmdOrCtrl+K', click: () => send('open:search') },
-        { label: s.quickAdd, accelerator: QUICK_SHORTCUT, registerAccelerator: false, click: toggleQuick },
+        { label: s.quickAdd, accelerator: QUICK_SHORTCUT, registerAccelerator: false, click: () => toggleQuick() },
+        ...(voice.supported ? [{ label: s.voice, accelerator: VOICE_SHORTCUT, registerAccelerator: false, click: () => toggleQuick(true) }] : []),
         { label: s.mini, accelerator: 'CmdOrCtrl+Shift+T', click: openMini },
         { type: 'separator' },
         { label: s.settings, accelerator: 'CmdOrCtrl+,', click: () => send('open:settings') },
@@ -351,7 +365,8 @@ function buildTray() {
       ...(trayNext ? [{ label: trayNext, enabled: false }, { type: 'separator' }] : []),
       { label: s.open, click: showWindow },
       { label: s.mini, click: openMini },
-      { label: quickShortcutOk ? `${s.quickAdd}  (${IS_MAC ? '⌘⇧Space' : 'Ctrl+Shift+Space'})` : s.quickAdd, click: toggleQuick },
+      { label: quickShortcutOk ? `${s.quickAdd}  (${IS_MAC ? '⌘⇧Space' : 'Ctrl+Shift+Space'})` : s.quickAdd, click: () => toggleQuick() },
+      ...(voice.supported ? [{ label: voiceShortcutOk ? `${s.voice}  (Ctrl+Alt+Space)` : s.voice, click: () => toggleQuick(true) }] : []),
       { type: 'separator' },
       { label: s.newTask, click: () => send('new:task') },
       { label: s.newEvent, click: () => send('new:event') },
@@ -407,6 +422,10 @@ function registerIpc() {
   ipcMain.handle('razor:license:refresh', () => license.refresh());
   // Sincronización cifrada
   sync.register(ipcMain);
+  // Dictado por voz (whisper.cpp en el equipo)
+  voice.register(ipcMain, (st) => {
+    for (const w of [win, quickWin]) if (w && !w.isDestroyed()) w.webContents.send('razor:voice', st);
+  });
   // Actualizaciones
   ipcMain.handle('razor:update:get', () => updater.get());
   ipcMain.handle('razor:update:check', () => updater.check());
@@ -426,8 +445,20 @@ function registerIpc() {
 
 /* ───────────── Arranque ───────────── */
 
+// Micrófono: solo para la propia app y solo audio (lo usa el dictado). El resto de permisos, como hasta ahora.
+function registerPermissions() {
+  session.defaultSession.setPermissionRequestHandler((_wc, permission, callback, details) => {
+    if (permission === 'media') {
+      const types = details.mediaTypes || [];
+      return callback(String(details.requestingUrl || '').startsWith(ORIGIN) && types.length > 0 && types.every((t) => t === 'audio'));
+    }
+    callback(true);
+  });
+}
+
 function start() {
   registerProtocol();
+  registerPermissions();
   registerIpc();
   createWindow();
   registerShortcuts();

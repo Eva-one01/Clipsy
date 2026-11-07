@@ -9,7 +9,7 @@ import { Screen } from '@/components/Screen';
 import { Segmented } from '@/components/Segmented';
 import { Text } from '@/components/Text';
 import { Card, Chip, Divider, Icon, IconButton, ListRow, SectionHeader, Toggle } from '@/components/ui';
-import { desktop } from '@/desktop/bridge';
+import { desktop, type VoiceState } from '@/desktop/bridge';
 import { useDesktopState } from '@/desktop/licensing';
 import { disableSync, syncNow, useSync } from '@/desktop/sync';
 import { ShortcutsCard } from '@/components/Shortcuts';
@@ -260,12 +260,52 @@ function DesktopSection() {
             <ListRow icon="sidebar" title={t('desk.sc.mini')} subtitle={t('desk.miniSub')} onPress={() => desktop?.openMini?.()} />
           </>
         ) : null}
+        {desktop?.voice ? <VoiceRows /> : null}
       </Card>
       <Text variant="caption" tone="faint" style={{ marginTop: space.md }}>
         {desktop?.platform === 'darwin' ? t('desk.trayNoteMac') : t('desk.trayNote')}
       </Text>
       {desktop?.sync ? <SyncSection /> : null}
       {desktop?.license ? <LicenseSection /> : null}
+    </>
+  );
+}
+
+/** Dictado por voz: descarga única del motor (whisper.cpp) y del modelo; después funciona sin internet. */
+function VoiceRows() {
+  const { t } = useT();
+  const [st, setSt] = useState<VoiceState | null>(null);
+
+  useEffect(() => {
+    desktop?.voice?.status().then(setSt).catch(() => undefined);
+    return desktop?.voice?.onChange(setSt);
+  }, []);
+  if (!st?.supported) return null;
+
+  const subtitle = st.installing
+    ? t('voice.downloading', { p: Math.round(st.progress * 100) })
+    : st.installed
+      ? t('voice.sub')
+      : st.error
+        ? t('voice.installFailed')
+        : t('voice.setup', { mb: st.sizeMB });
+  return (
+    <>
+      <Divider inset={58} />
+      <ListRow
+        icon="mic"
+        title={t('voice.title')}
+        subtitle={subtitle}
+        onPress={st.installed || st.installing ? undefined : () => desktop?.voice?.install().then(setSt).catch(() => undefined)}
+        value={st.installed ? t('voice.ready') : st.installing ? undefined : t('voice.download')}
+        chevron={!st.installed && !st.installing}
+      />
+      {st.installed ? (
+        <>
+          <Divider inset={58} />
+          <ListRow icon="trash-2" title={t('voice.remove')} subtitle={t('voice.removeSub', { mb: st.sizeMB })} onPress={() => desktop?.voice?.remove().then(setSt).catch(() => undefined)} />
+        </>
+      ) : null}
     </>
   );
 }

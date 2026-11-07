@@ -1,5 +1,5 @@
 import { StyleSheet, View } from 'react-native';
-import { modKey } from '@/desktop/bridge';
+import { desktop, modKey } from '@/desktop/bridge';
 import type { TKey } from '@/i18n';
 import { useT } from '@/i18n/useT';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -11,6 +11,7 @@ import { Card, Divider } from './ui';
 const SHORTCUTS: [string[], TKey][] = [
   [['Mod', 'K'], 'desk.sc.search'],
   [['Mod', 'Shift', 'Space'], 'desk.sc.quick'],
+  [['Mod', 'Alt', 'Space'], 'desk.sc.voice'],
   [['Mod', 'Shift', 'T'], 'desk.sc.mini'],
   [['Mod', '1 – 5'], 'desk.sc.nav'],
   [['Mod', 'N'], 'desk.sc.task'],
@@ -24,7 +25,8 @@ export function ShortcutsCard() {
   const { t } = useT();
   return (
     <Card padded={false}>
-      {SHORTCUTS.map(([keys, label], i) => (
+      {/* El dictado por voz solo existe en Windows (desktop/voice.js). */}
+      {SHORTCUTS.filter(([, label]) => label !== 'desk.sc.voice' || desktop?.platform === 'win32').map(([keys, label], i) => (
         <View key={label}>
           {i > 0 && <Divider inset={space.lg} />}
           <View style={styles.shortcut}>
