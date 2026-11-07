@@ -1,0 +1,57 @@
+# Compila los instaladores de escritorio en los servidores de GitHub (gratis en repos públicos
+# y con minutos incluidos en privados). No hace falta tener un Mac para generar la versión de macOS.
+# Se lanza a mano desde la pestaña "Actions" o al publicar una etiqueta tipo v1.1.1.
+name: Escritorio
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: win
+            files: |
+              desktop/release/*.exe
+              desktop/release/*.blockmap
+              desktop/release/latest.yml
+          - os: macos-latest
+            target: mac
+            files: |
+              desktop/release/*.dmg
+              desktop/release/*.zip
+              desktop/release/*.blockmap
+              desktop/release/latest-mac.yml
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias de la app
+        run: npm ci
+
+      - name: Exportar la app (versión web)
+        run: npm run desktop:export
+
+      - name: Instalar Electron
+        run: npm install --prefix desktop
+
+      - name: Crear instalador
+        run: npm run dist:${{ matrix.target }} --prefix desktop
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Clipsy-${{ matrix.target }}
+          path: ${{ matrix.files }}
+          if-no-files-found: error
