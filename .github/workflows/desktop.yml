@@ -45,11 +45,14 @@ jobs:
       - name: Exportar la app (versión web)
         run: npm run desktop:export
 
+      - name: Comprobar archivos de escritorio
+        run: node tools/check-desktop-files.js
+
       - name: Clave pública de licencias
         run: node tools/fill-license-key.js
 
       - name: Instalar Electron
-        run: npm install --prefix desktop
+        run: npm ci --prefix desktop
 
       - name: Crear instalador
         run: npm run dist:${{ matrix.target }} --prefix desktop
