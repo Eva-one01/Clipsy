@@ -1,5 +1,5 @@
 import { categoryLabel } from '@/constants/finance';
-import { auxWindow } from '@/desktop/aux';
+import { auxWindow } from '@/desktop/auxWindow';
 import { t } from '@/i18n';
 import { useStore } from '@/store';
 import type { Transaction } from '@/store/types';

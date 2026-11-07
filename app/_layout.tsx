@@ -9,7 +9,7 @@ import { ActivationScreen } from '@/components/ActivationScreen';
 import { CommandPalette } from '@/components/CommandPalette';
 import { DialogHost } from '@/components/DialogHost';
 import { UpdateBanner } from '@/components/UpdateBanner';
-import { auxWindow } from '@/desktop/aux';
+import { auxWindow } from '@/desktop/auxWindow';
 import { useCrossWindowSync } from '@/desktop/crossWindow';
 import { useAutoSync } from '@/desktop/sync';
 import { useDesktopStateSync, useLicenseGate } from '@/desktop/licensing';

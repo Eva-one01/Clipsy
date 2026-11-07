@@ -9,7 +9,7 @@
  */
 import { router } from 'expo-router';
 import { useEffect } from 'react';
-import { auxWindow } from '@/desktop/aux';
+import { auxWindow } from '@/desktop/auxWindow';
 import { desktop } from '@/desktop/bridge';
 import { t } from '@/i18n';
 import type { Alarm, CalendarEvent, RecurringTx, Reminder } from '@/store/types';

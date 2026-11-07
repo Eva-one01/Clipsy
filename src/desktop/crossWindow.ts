@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { useStore } from '@/store';
-import { auxWindow } from './aux';
+import { auxWindow } from './auxWindow';
 import { desktop } from './bridge';
 
 const KEY = 'razor-store';
