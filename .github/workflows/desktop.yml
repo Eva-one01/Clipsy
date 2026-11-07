@@ -8,6 +8,9 @@ on:
   push:
     tags: ['v*']
 
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
@@ -58,3 +61,17 @@ jobs:
           name: Clipsy-${{ matrix.target }}
           path: ${{ matrix.files }}
           if-no-files-found: error
+
+      # Copia de los instaladores en una release de este repositorio (para pasarlos a razor-releases).
+      - name: Versión
+        id: ver
+        shell: bash
+        run: echo "v=$(node -p "require('./desktop/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-v${{ steps.ver.outputs.v }}
+          name: Compilación ${{ steps.ver.outputs.v }}
+          prerelease: true
+          files: ${{ matrix.files }}
+          fail_on_unmatched_files: true
