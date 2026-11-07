@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Input } from '@/components/Input';
 import { PressableScale } from '@/components/PressableScale';
@@ -187,36 +187,51 @@ export default function Today() {
 
       {/* Relojes */}
       <SectionHeader title={t('today.clocks')} action={t('common.edit')} onAction={() => router.push('/clocks')} />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.sm }} style={{ marginHorizontal: -space.xl }}>
-        <View style={{ width: space.xl - space.sm }} />
-        {clocks.map((cl) => {
+      {/* En lista, uno debajo de otro: con varias ciudades no se salen por la derecha. */}
+      <Card padded={false}>
+        {clocks.map((cl, i) => {
           const z = zoned(cl.tz, now);
           const hm = `${String(z.hour).padStart(2, '0')}:${String(z.minute).padStart(2, '0')}`;
           const rel = dayRelation(cl.tz, now);
+          const [time, ampm] = splitTime(hm, use24h);
           return (
-            <Card key={cl.id} style={{ width: 132, gap: 4 }}>
-              <Text variant="caption" tone="muted" numberOfLines={1}>
-                {clockLabel(cl, lang)}
-              </Text>
+            <View
+              key={cl.id}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.md, borderTopWidth: i ? 1 : 0, borderTopColor: c.border }}
+            >
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text variant="bodyStrong" numberOfLines={1}>
+                  {clockLabel(cl, lang)}
+                </Text>
+                <Text variant="caption" tone="faint" numberOfLines={1}>
+                  {rel !== 0 ? `${dayRelationLabel(rel)} · ` : ''}
+                  {formatOffset(offsetFromLocal(cl.tz, now))}
+                </Text>
+              </View>
               <Text variant="title" tabular style={{ fontWeight: '300', fontSize: 28 }}>
-                {splitTime(hm, use24h)[0]}
+                {time}
+                {ampm ? (
+                  <Text variant="caption" tone="muted">
+                    {' '}
+                    {ampm}
+                  </Text>
+                ) : null}
               </Text>
-              <Text variant="caption" tone="faint" numberOfLines={1}>
-                {rel !== 0 ? `${dayRelationLabel(rel)} · ` : ''}
-                {formatOffset(offsetFromLocal(cl.tz, now))}
-              </Text>
-            </Card>
+            </View>
           );
         })}
         <PressableScale
           onPress={() => router.push('/form/clock')}
+          accessibilityRole="button"
           accessibilityLabel={t('today.addClock')}
-          style={{ width: 80, borderRadius: radius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: c.borderStrong, alignItems: 'center', justifyContent: 'center' }}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.lg, paddingVertical: space.md, borderTopWidth: clocks.length ? 1 : 0, borderTopColor: c.border }}
         >
-          <Icon name="plus" color={c.textMuted} />
+          <Icon name="plus" size={16} color={c.textMuted} />
+          <Text variant="body" tone="muted">
+            {t('today.addClock')}
+          </Text>
         </PressableScale>
-        <View style={{ width: space.xl - space.sm }} />
-      </ScrollView>
+      </Card>
     </Screen>
   );
 }
