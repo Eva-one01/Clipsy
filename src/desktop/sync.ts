@@ -10,7 +10,7 @@
 import { useEffect } from 'react';
 import { create } from 'zustand';
 import { useStore } from '@/store';
-import { auxWindow } from './aux';
+import { auxWindow } from './auxWindow';
 import { desktop } from './bridge';
 
 const BASE_KEY = 'razor-sync-base';

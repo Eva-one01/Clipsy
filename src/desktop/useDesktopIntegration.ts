@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 import { openPalette } from '@/lib/palette';
 import { useStore } from '@/store';
 import { useTheme } from '@/theme/ThemeProvider';
-import { auxWindow } from './aux';
+import { auxWindow } from './auxWindow';
 import { desktop, type MenuAction } from './bridge';
 import { useTrayNextUp } from './nextUp';
 
