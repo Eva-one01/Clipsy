@@ -2,7 +2,7 @@
 // Rellénala antes de compilar los instaladores (ver README → «Licencias y actualizaciones»).
 module.exports = {
   // Tu web (la de razor-web), sin barra final. Se usa para activar licencias y abrir la cuenta.
-  siteUrl: 'https://TU-DOMINIO',
+  siteUrl: 'https://razorweb.vercel.app',
 
   // Supabase → Project Settings → API (la clave "anon" es pública; nunca pongas la service_role).
   supabaseUrl: 'https://xcbmwilvzpuwaabvvvof.supabase.co',
@@ -12,6 +12,8 @@ module.exports = {
   updatesUrl: 'https://github.com/Eva-one01/razor-releases/releases/latest/download',
 
   // Clave PÚBLICA de licencias (la genera razor-web/tools/generate-license-keys.js).
+  // Si se deja el texto de ejemplo, al compilar en GitHub Actions se descarga sola del servidor
+  // (tools/fill-license-key.js), que además comprueba que coincida.
   licensePublicKey: `-----BEGIN PUBLIC KEY-----
 PEGA-AQUI-LA-CLAVE-PUBLICA
 -----END PUBLIC KEY-----`,

@@ -42,6 +42,9 @@ jobs:
       - name: Exportar la app (versión web)
         run: npm run desktop:export
 
+      - name: Clave pública de licencias
+        run: node tools/fill-license-key.js
+
       - name: Instalar Electron
         run: npm install --prefix desktop
 
