@@ -1,3 +1,4 @@
+import { categoryLabel } from '@/constants/finance';
 import { t } from '@/i18n';
 import { useStore } from '@/store';
 import { tagColors } from '@/theme/tokens';
@@ -7,10 +8,11 @@ import { formatMoney } from './money';
 import { ensurePermission } from './notifications';
 import type { QuickKind, QuickParsed } from './quickParse';
 
-export const KIND_ICON: Record<QuickKind, 'check-square' | 'calendar' | 'bell' | 'minus-circle' | 'plus-circle' | 'zap'> = {
+export const KIND_ICON: Record<QuickKind, 'check-square' | 'calendar' | 'bell' | 'clock' | 'minus-circle' | 'plus-circle' | 'zap'> = {
   task: 'check-square',
   event: 'calendar',
   reminder: 'bell',
+  alarm: 'clock',
   expense: 'minus-circle',
   income: 'plus-circle',
   idea: 'zap',
@@ -20,7 +22,8 @@ export const KIND_ICON: Record<QuickKind, 'check-square' | 'calendar' | 'bell' |
 export function describeQuick(p: QuickParsed, currency: string): string {
   const bits: string[] = [];
   if (p.amount !== null) bits.push(formatMoney(p.amount, currency));
-  if (p.date) bits.push(relativeDay(p.date));
+  if (p.category) bits.push(categoryLabel(p.category));
+  if (p.date && p.kind !== 'alarm') bits.push(relativeDay(p.date));
   if (p.time) bits.push(p.end && p.kind === 'event' ? `${p.time}–${p.end}` : p.time);
   if (p.kind === 'task' && p.priority === 2) bits.push(t('qa.prioHigh'));
   else if (p.kind === 'task' && p.priority === 1) bits.push(t('qa.prioMed'));
@@ -64,10 +67,18 @@ export async function runQuick(p: QuickParsed): Promise<boolean> {
       await s.addReminder({ title, at: d.getTime() });
       return true;
     }
+    case 'alarm': {
+      if (!p.time) return false;
+      // Con día («despiértame el lunes a las 6») suena ese día de la semana; si no, de lunes a viernes, como en el formulario.
+      const days = p.date ? [fromKey(p.date).getDay()] : [1, 2, 3, 4, 5];
+      await s.addAlarm({ time: p.time, label: title, days, enabled: true });
+      await ensurePermission().catch(() => undefined);
+      return true;
+    }
     case 'expense':
     case 'income': {
       if (!p.amount || !p.date) return false;
-      const category = p.kind === 'income' ? 'other_in' : 'other';
+      const category = p.category ?? (p.kind === 'income' ? 'other_in' : 'other');
       s.addTransaction({ type: p.kind, amount: p.amount, category, note: title, date: p.date });
       if (p.kind === 'expense') checkBudgetAlert(category, p.date);
       return true;

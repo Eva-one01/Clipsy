@@ -48,6 +48,22 @@ export interface UpdateState {
   manual?: boolean;
 }
 
+/** Dictado por voz (whisper.cpp en el equipo). Solo Windows x64 por ahora. */
+export interface VoiceState {
+  supported: boolean;
+  installed: boolean;
+  installing: boolean;
+  /** 0–1 mientras se descarga el motor y el modelo. */
+  progress: number;
+  sizeMB: number;
+  error: string | null;
+}
+export interface VoiceResult {
+  ok: boolean;
+  text?: string;
+  error?: string;
+}
+
 export interface SyncResponse {
   ok: boolean;
   error?: string;
@@ -72,6 +88,16 @@ export interface RazorDesktop {
   /** Texto de lo próximo (alarma, recordatorio o evento) para la bandeja del sistema. */
   setTrayInfo?(label: string | null): void;
   onQuickOpen?(cb: () => void): () => void;
+  /** Atajo de voz (Ctrl+Alt+Espacio): la barra rápida empieza o deja de escuchar. */
+  onQuickVoice?(cb: () => void): () => void;
+  voice?: {
+    status(): Promise<VoiceState>;
+    install(): Promise<VoiceState>;
+    remove(): Promise<VoiceState>;
+    /** WAV mono de 16 kHz → texto. */
+    transcribe(wav: ArrayBuffer, lang: string): Promise<VoiceResult>;
+    onChange(cb: (st: VoiceState) => void): () => void;
+  };
   onNavigate?(cb: (route: string) => void): () => void;
   /** Copia texto al portapapeles del sistema. */
   copyText?(text: string): void;

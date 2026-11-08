@@ -17,6 +17,23 @@ contextBridge.exposeInMainWorld('razorDesktop', {
     ipcRenderer.on('razor:quick-open', h);
     return () => ipcRenderer.removeListener('razor:quick-open', h);
   },
+  onQuickVoice: (cb) => {
+    const h = () => cb();
+    ipcRenderer.on('razor:quick-voice', h);
+    return () => ipcRenderer.removeListener('razor:quick-voice', h);
+  },
+  voice: {
+    status: () => ipcRenderer.invoke('razor:voice:status'),
+    install: () => ipcRenderer.invoke('razor:voice:install'),
+    remove: () => ipcRenderer.invoke('razor:voice:remove'),
+    // WAV mono de 16 kHz → { ok, text } (todo se procesa en el equipo)
+    transcribe: (wav, lang) => ipcRenderer.invoke('razor:voice:transcribe', new Uint8Array(wav), String(lang)),
+    onChange: (cb) => {
+      const h = (_e, st) => cb(st);
+      ipcRenderer.on('razor:voice', h);
+      return () => ipcRenderer.removeListener('razor:voice', h);
+    },
+  },
   onNavigate: (cb) => {
     const h = (_e, route) => cb(String(route));
     ipcRenderer.on('razor:navigate', h);

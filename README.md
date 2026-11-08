@@ -82,6 +82,13 @@ La app de escritorio usa **el mismo código** que la móvil: Expo la exporta com
 
 **Alarmas y recordatorios**: llegan como notificaciones del sistema. Al cerrar la ventana Razor sigue en la bandeja (barra de menús en Mac) para avisarte; en Ajustes → Escritorio puedes hacer que arranque solo al iniciar sesión. Si sales del todo, no hay avisos hasta que vuelvas a abrirla.
 
+**Dictado por voz (Windows)**: `Ctrl+Alt+Espacio` desde cualquier programa (o el micrófono de la barra rápida) abre la barra escuchando. Al callar, lo dicho se escribe en el campo y se guarda solo al momento, salvo que lo corrijas o pulses Esc. Ejemplos: «recuérdame llamar a Juan en 20 minutos», «pon una alarma a las 6 y media», «gasté 35 mil en almuerzo».
+- El audio se pasa a texto **en el equipo** con [whisper.cpp](https://github.com/ggml-org/whisper.cpp) (`desktop/voice.js`) y nunca sale de él.
+- El motor y el modelo `ggml-base-q5_1` (unos 70 MB) **no van en el instalador**. Se descargan una sola vez cuando la persona activa la voz, desde GitHub y Hugging Face, y se comprueba su SHA-256 antes de usarlos. Quedan en `%APPDATA%\Razor\voice` y se pueden quitar desde *Ajustes → Escritorio*.
+- Para cambiar de versión o de modelo, actualiza la URL, el tamaño y el SHA-256 en `desktop/voice.js`.
+- En macOS y Linux la voz no aparece todavía: whisper.cpp no publica binarios para esos sistemas, así que habría que compilarlos y añadirlos.
+- El intérprete de frases (`src/lib/quickParse.ts`) es el mismo para lo escrito y lo dictado. Sus pruebas: `npm run test:quick`.
+
 **Tus datos**: el escritorio y el teléfono guardan sus datos por separado. Para pasarlos de uno a otro, usa *Ajustes → Exportar / Restaurar copia de seguridad*: el formato es el mismo.
 
 ### Probar en tu ordenador

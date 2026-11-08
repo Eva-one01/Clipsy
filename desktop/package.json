@@ -34,6 +34,8 @@
       "config.js",
       "license.js",
       "updater.js",
+      "voice.js",
+      "sync.js",
       "i18n.js",
       "sync.js",
       "app/**/*",

@@ -10,6 +10,7 @@
     "align": "npx expo install --fix",
     "doctor": "npx expo-doctor@latest",
     "typecheck": "tsc --noEmit",
+    "test:quick": "node --no-warnings scripts/test-quick-parse.mts",
     "build:dev": "eas build --profile development --platform all",
     "build:preview": "eas build --profile preview --platform all",
     "build:prod": "eas build --profile production --platform all",
