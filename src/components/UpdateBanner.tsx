@@ -18,7 +18,9 @@ export function UpdateBanner() {
 
   const ready = update?.status === 'ready';
   const manual = update?.status === 'available' && update.manual;
-  if (!desktop?.updates || !update?.version || (!ready && !manual) || hidden === update.version) return null;
+  // Se avisa en cuanto se detecta la versión nueva (al abrir la app), no solo cuando ya está descargada.
+  const downloading = update?.status === 'downloading';
+  if (!desktop?.updates || !update?.version || (!ready && !manual && !downloading) || hidden === update.version) return null;
 
   return (
     <Animated.View
@@ -31,13 +33,19 @@ export function UpdateBanner() {
         <Icon name="download-cloud" size={18} color={c.accent} />
       </View>
       <View style={{ flex: 1, gap: 2 }}>
-        <Text variant="bodyStrong">{t('upd.title', { v: update.version })}</Text>
+        <Text variant="bodyStrong">{t('upd.newTitle', { v: update.version })}</Text>
         <Text variant="caption" tone="muted">
-          {ready ? t('upd.readyBody') : t('upd.manualBody')}
+          {ready ? t('upd.readyBody') : downloading ? t('upd.downloadingBody', { p: update.progress ?? 0 }) : t('upd.manualBody')}
         </Text>
-        <View style={{ flexDirection: 'row', marginTop: space.sm }}>
-          <Button title={ready ? t('upd.restart') : t('upd.download')} onPress={() => desktop?.updates?.install()} />
-        </View>
+        {downloading ? (
+          <View style={[styles.bar, { backgroundColor: c.surfaceAlt }]}>
+            <View style={{ width: `${Math.max(4, update.progress ?? 0)}%`, height: '100%', borderRadius: 2, backgroundColor: c.accent }} />
+          </View>
+        ) : (
+          <View style={{ flexDirection: 'row', marginTop: space.sm }}>
+            <Button title={ready ? t('upd.restart') : t('upd.download')} onPress={() => desktop?.updates?.install()} />
+          </View>
+        )}
       </View>
       <IconButton icon="x" label={t('upd.later')} size={30} onPress={() => setHidden(update.version ?? null)} />
     </Animated.View>
@@ -62,4 +70,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
   },
   icon: { width: 36, height: 36, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  bar: { height: 4, borderRadius: 2, marginTop: space.sm, overflow: 'hidden' },
 });

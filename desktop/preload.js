@@ -25,6 +25,11 @@ contextBridge.exposeInMainWorld('razorDesktop', {
     ipcRenderer.on('razor:quick-voice', h);
     return () => ipcRenderer.removeListener('razor:quick-voice', h);
   },
+  importer: {
+    // Abre el diálogo del sistema; el archivo se lee en el equipo y vuelve como filas de texto.
+    pick: (lang) => ipcRenderer.invoke('razor:import:pick', String(lang || '')),
+    info: () => ipcRenderer.invoke('razor:import:info'),
+  },
   voice: {
     status: () => ipcRenderer.invoke('razor:voice:status'),
     install: () => ipcRenderer.invoke('razor:voice:install'),

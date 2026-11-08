@@ -16,6 +16,7 @@ const native = () => !!autoUpdater && (!IS_MAC || CFG.macAutoUpdate);
 const enabled = () => app.isPackaged && !/TU-PROYECTO/.test(CFG.updatesUrl);
 
 let state = { status: 'idle', current: app.getVersion() };
+let lastCheck = 0;
 let listener = () => {};
 let beforeInstall = () => {};
 function set(patch) {
@@ -42,6 +43,7 @@ async function manualCheck() {
 async function check() {
   if (!enabled()) return set({ status: 'disabled' }), state;
   if (['checking', 'downloading', 'ready'].includes(state.status)) return state;
+  lastCheck = Date.now();
   set({ status: 'checking', error: undefined });
   try {
     if (native()) await autoUpdater.checkForUpdates();
@@ -75,8 +77,14 @@ function init(onChange, onBeforeInstall) {
     autoUpdater.on('update-downloaded', (i) => set({ status: 'ready', version: i.version }));
     autoUpdater.on('error', () => set({ status: 'error' }));
   }
-  setTimeout(check, 10 * 1000);
+  // Al abrir la app se revisa enseguida; si hay versión nueva, se descarga y se pide actualizar.
+  setTimeout(check, 2 * 1000);
   setInterval(check, 6 * 60 * 60 * 1000).unref?.();
 }
 
-module.exports = { init, check, install, get: () => state };
+/** Al volver a mostrar la ventana: revisa si pasó un rato desde la última vez. */
+function checkIfStale() {
+  if (enabled() && Date.now() - lastCheck > 30 * 60 * 1000) check();
+}
+
+module.exports = { init, check, checkIfStale, install, get: () => state };

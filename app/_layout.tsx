@@ -86,6 +86,7 @@ function RootStack() {
         <Stack.Screen name="settings" />
         <Stack.Screen name="legal" />
         <Stack.Screen name="help" />
+        <Stack.Screen name="import" />
         <Stack.Screen name="review" />
         <Stack.Screen name="mini" options={{ animation: 'none' }} />
         <Stack.Screen name="quick" options={{ animation: 'none', contentStyle: { backgroundColor: c.elevated } }} />

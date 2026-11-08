@@ -113,6 +113,7 @@ export function Sidebar({ state, navigation }: TabBarProps) {
 
       <TrialCard />
 
+      <NavRow icon="upload" label={t('import.nav')} onPress={() => router.push('/import')} />
       <NavRow icon="help-circle" label={t('help.title')} onPress={() => router.push('/help')} />
       <NavRow icon="settings" label={t('common.settings')} hint={modKey === '⌘' ? '⌘,' : 'Ctrl+,'} onPress={() => router.push('/settings')} />
     </View>

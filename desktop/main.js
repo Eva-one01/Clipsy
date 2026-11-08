@@ -10,6 +10,7 @@ const license = require('./license');
 const updater = require('./updater');
 const sync = require('./sync');
 const voice = require('./voice');
+const importer = require('./importer');
 
 const APP_DIR = path.join(__dirname, 'app');
 const SCHEME = 'app';
@@ -35,11 +36,11 @@ let quickWin = null;
 let tray = null;
 let trayNext = null; // «Reunión · 10:00»: lo próximo que va a sonar o empezar
 const QUICK_SHORTCUT = 'CommandOrControl+Shift+Space';
-// Dictado: abre la barra rápida ya escuchando. Ctrl+Alt+D («D» de dictar) no lo usan Windows, los
-// navegadores ni las apps de reuniones, y AltGr+D no escribe ningún carácter en los teclados que
-// soporta Clipsy. Si otro programa ya lo tiene, se prueba la siguiente. (Ctrl+Alt+Espacio lo usa la
-// app de Claude y Alt+Espacio el lanzador de PowerToys y ChatGPT.)
-const VOICE_SHORTCUTS = ['CommandOrControl+Alt+D', 'CommandOrControl+Shift+Alt+D'];
+// Dictado: abre la barra rápida ya escuchando. Ctrl+Shift+D («D» de dictar). Mientras Clipsy está
+// abierto, esa combinación deja de llegar a otros programas (en Chrome/Edge es «añadir todas las
+// pestañas a favoritos», poco usado). Si otro programa ya la tiene, se prueba Ctrl+Alt+D.
+// (Ctrl+Alt+Espacio lo usa la app de Claude y Alt+Espacio el lanzador de PowerToys y ChatGPT.)
+const VOICE_SHORTCUTS = ['CommandOrControl+Shift+D', 'CommandOrControl+Alt+D'];
 let quickShortcutOk = false;
 let voiceShortcut = null; // la combinación que se consiguió registrar, o null si todas están ocupadas
 let quitting = false;
@@ -306,6 +307,7 @@ function showWindow() {
   if (win.isMinimized()) win.restore();
   win.show();
   win.focus();
+  updater.checkIfStale(); // cada vez que se abre Clipsy, mira si hay versión nueva
 }
 
 function send(action) {
@@ -448,6 +450,8 @@ function registerIpc() {
   ipcMain.handle('razor:license:refresh', () => license.refresh());
   // Sincronización cifrada
   sync.register(ipcMain);
+  // Importar archivos (Excel, CSV, Word, PDF, texto y fotos), leídos en el equipo
+  importer.register(ipcMain, () => BrowserWindow.getFocusedWindow() || win);
   // Dictado por voz (whisper.cpp en el equipo)
   voice.register(ipcMain, (st) => {
     for (const w of [win, quickWin]) if (w && !w.isDestroyed()) w.webContents.send('razor:voice', st);

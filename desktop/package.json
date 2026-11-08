@@ -1,7 +1,7 @@
 {
   "name": "razor-desktop",
   "productName": "Clipsy",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Agenda, tareas, objetivos, alarmas, relojes mundiales y finanzas. Minimalista y privada.",
   "author": "Clipsy",
   "license": "UNLICENSED",
@@ -35,6 +35,9 @@
       "license.js",
       "updater.js",
       "voice.js",
+      "importer.js",
+      "zip.js",
+      "ocr.ps1",
       "sync.js",
       "i18n.js",
       "app/**/*",
@@ -44,6 +47,9 @@
       "build/trayTemplate@2x.png"
     ],
     "asar": true,
+    "asarUnpack": [
+      "ocr.ps1"
+    ],
     "win": {
       "target": [
         {

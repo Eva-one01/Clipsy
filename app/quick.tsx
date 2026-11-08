@@ -17,7 +17,7 @@ import { motion, radius, space } from '@/theme/tokens';
 const KINDS: QuickKind[] = ['task', 'event', 'reminder', 'alarm', 'expense', 'idea'];
 const AUTO_SAVE_MS = 1600; // tras dictar, se guarda solo si nadie corrige el texto
 
-/** Barra de alta rápida del escritorio (Ctrl/⌘+Shift+Espacio desde cualquier programa; Ctrl+Alt+D para dictar). */
+/** Barra de alta rápida del escritorio (Ctrl/⌘+Shift+Espacio desde cualquier programa; Ctrl+Shift+D para dictar). */
 export default function Quick() {
   const { c } = useTheme();
   const { t } = useT();

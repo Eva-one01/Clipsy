@@ -78,6 +78,11 @@ export function formatLongDate(d: Date): string {
   return cap(fmt({ weekday: 'long', day: 'numeric', month: 'long' }).format(d));
 }
 
+/** Los 12 meses en el idioma de la app (enero…diciembre), para el selector de mes. */
+export function monthNames(style: 'short' | 'long' = 'short'): string[] {
+  return Array.from({ length: 12 }, (_, m) => cap(fmt({ month: style }).format(new Date(2026, m, 1)).replace('.', '')));
+}
+
 export function formatMonthTitle(d: Date): string {
   return cap(fmt({ month: 'long', year: 'numeric' }).format(d));
 }

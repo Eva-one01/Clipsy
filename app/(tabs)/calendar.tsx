@@ -14,6 +14,7 @@ import {
   formatMonthTitle,
   fromKey,
   monthMatrix,
+  monthNames,
   toKey,
   todayKey,
   weekdayLabels,
@@ -38,6 +39,9 @@ export default function CalendarScreen() {
   const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [selected, setSelected] = useState(todayKey());
   const [dir, setDir] = useState<1 | -1>(1);
+  // Selector de mes y año (al pulsar el título): saltar a cualquier fecha sin pasar mes a mes.
+  const [picker, setPicker] = useState(false);
+  const [pickYear, setPickYear] = useState(() => new Date().getFullYear());
 
   const days = useMemo(() => monthMatrix(month.getFullYear(), month.getMonth(), weekStartsMonday), [month, weekStartsMonday]);
 
@@ -59,6 +63,20 @@ export default function CalendarScreen() {
     haptic.tap();
     setDir(n);
     setMonth((m) => addMonths(m, n));
+  };
+
+  const togglePicker = () => {
+    haptic.tap();
+    setPickYear(month.getFullYear());
+    setPicker((v) => !v);
+  };
+
+  const pickMonth = (m: number) => {
+    haptic.soft();
+    const d = new Date(pickYear, m, 1);
+    setDir(d < month ? -1 : 1);
+    setMonth(d);
+    setPicker(false);
   };
 
   const goToday = () => {
@@ -86,6 +104,9 @@ export default function CalendarScreen() {
       tabbed
       title={formatMonthTitle(month)}
       subtitle={t('cal.subtitle')}
+      onTitlePress={togglePicker}
+      titleOpen={picker}
+      titleHint={t('cal.pickMonth')}
       actions={
         <>
           <IconButton icon="chevron-left" label={t('common.prevMonth')} onPress={() => shift(-1)} />
@@ -94,6 +115,36 @@ export default function CalendarScreen() {
         </>
       }
     >
+      {picker ? (
+        <Animated.View entering={FadeInDown.duration(motion.base)} style={[styles.picker, { backgroundColor: c.surface, borderColor: c.border }]}>
+          <View style={styles.pickerHead}>
+            <IconButton icon="chevron-left" label={t('cal.prevYear')} onPress={() => setPickYear((y) => y - 1)} />
+            <Text variant="heading" tabular>
+              {pickYear}
+            </Text>
+            <IconButton icon="chevron-right" label={t('cal.nextYear')} onPress={() => setPickYear((y) => y + 1)} />
+          </View>
+          <View style={styles.months}>
+            {monthNames('short').map((name, m) => {
+              const isCur = pickYear === month.getFullYear() && m === month.getMonth();
+              const isNow = pickYear === now.getFullYear() && m === now.getMonth();
+              return (
+                <Pressable
+                  key={m}
+                  onPress={() => pickMonth(m)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isCur }}
+                  style={[styles.monthBtn, { backgroundColor: isCur ? c.accent : 'transparent', borderColor: isNow && !isCur ? c.accent : c.border }]}
+                >
+                  <Text variant="bodyStrong" style={{ color: isCur ? c.onAccent : isNow ? c.accent : c.text }}>
+                    {name}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </Animated.View>
+      ) : null}
       <SplitLayout
         desktop={isDesktop}
         left={
@@ -238,4 +289,8 @@ const CIRCLE = 30;
 const styles = StyleSheet.create({
   grid: { borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: space.sm, paddingTop: space.md, paddingBottom: space.xs },
   cell: { width: `${100 / 7}%`, height: CELL_H, alignItems: 'center', justifyContent: 'center' },
+  picker: { borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, padding: space.md, marginBottom: space.lg, gap: space.sm },
+  pickerHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  months: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  monthBtn: { flexBasis: '22%', flexGrow: 1, height: 40, borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center' },
 });

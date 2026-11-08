@@ -11,7 +11,7 @@ import { Card, Divider } from './ui';
 const SHORTCUTS: [string[], TKey][] = [
   [['Mod', 'K'], 'desk.sc.search'],
   [['Mod', 'Shift', 'Space'], 'desk.sc.quick'],
-  [['Mod', 'Alt', 'D'], 'desk.sc.voice'],
+  [['Mod', 'Shift', 'D'], 'desk.sc.voice'],
   [['Mod', 'Shift', 'T'], 'desk.sc.mini'],
   [['Mod', '1 – 5'], 'desk.sc.nav'],
   [['Mod', 'N'], 'desk.sc.task'],
