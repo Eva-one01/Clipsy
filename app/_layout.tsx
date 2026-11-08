@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ActivationScreen } from '@/components/ActivationScreen';
 import { CommandPalette } from '@/components/CommandPalette';
 import { DialogHost } from '@/components/DialogHost';
+import { TitleBar, titleBarHeight } from '@/components/TitleBar';
 import { UpdateBanner } from '@/components/UpdateBanner';
 import { auxWindow } from '@/desktop/auxWindow';
 import { useCrossWindowSync } from '@/desktop/crossWindow';
@@ -72,6 +73,9 @@ function RootStack() {
   return (
     <>
       <StatusBar style={isDark ? 'light' : 'dark'} animated />
+      {/* Windows: barra de título propia arriba (con el aviso de actualización junto a minimizar). */}
+      {titleBarHeight && !auxWindow ? <TitleBar /> : null}
+      <View style={{ flex: 1 }}>
       <Stack
         screenOptions={{
           headerShown: false,
@@ -106,6 +110,7 @@ function RootStack() {
       {gate === 'gate' && onboarded ? <ActivationScreen /> : null}
       {gate === 'open' && !auxWindow ? <UpdateBanner /> : null}
       {gate === 'open' && onboarded && !auxWindow ? <CommandPalette /> : null}
+      </View>
       <DialogHost />
     </>
   );

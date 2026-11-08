@@ -11,6 +11,7 @@ const updater = require('./updater');
 const sync = require('./sync');
 const voice = require('./voice');
 const importer = require('./importer');
+const shortcuts = require('./shortcuts');
 
 const APP_DIR = path.join(__dirname, 'app');
 const SCHEME = 'app';
@@ -35,14 +36,12 @@ let miniWin = null;
 let quickWin = null;
 let tray = null;
 let trayNext = null; // «Reunión · 10:00»: lo próximo que va a sonar o empezar
-const QUICK_SHORTCUT = 'CommandOrControl+Shift+Space';
-// Dictado: abre la barra rápida ya escuchando. Ctrl+Shift+D («D» de dictar). Mientras Clipsy está
-// abierto, esa combinación deja de llegar a otros programas (en Chrome/Edge es «añadir todas las
-// pestañas a favoritos», poco usado). Si otro programa ya la tiene, se prueba Ctrl+Alt+D.
-// (Ctrl+Alt+Espacio lo usa la app de Claude y Alt+Espacio el lanzador de PowerToys y ChatGPT.)
-const VOICE_SHORTCUTS = ['CommandOrControl+Shift+D', 'CommandOrControl+Alt+D'];
-let quickShortcutOk = false;
-let voiceShortcut = null; // la combinación que se consiguió registrar, o null si todas están ocupadas
+// Atajos: configurables desde Ajustes/Ayuda (desktop/shortcuts.js). Por defecto, Ctrl+Shift+Espacio
+// abre la barra rápida y Ctrl+Shift+D dicta («D» de dictar; si otro programa la tiene, Ctrl+Alt+D).
+// Ctrl+Alt+Espacio lo usa la app de Claude y Alt+Espacio el lanzador de PowerToys y ChatGPT.
+const IS_WIN = process.platform === 'win32';
+const TITLE_H = 36; // barra de título propia en Windows (con el aviso de actualización junto a minimizar)
+let shortcutsPausedTimer = null;
 let quitting = false;
 let lang = (app.getLocale() || 'en').slice(0, 2);
 const startHidden = process.argv.includes('--hidden') || (IS_MAC && app.getLoginItemSettings().wasOpenedAtLogin);
@@ -108,6 +107,18 @@ function createWindow() {
     minWidth: Math.min(900, area.width),
     minHeight: Math.min(620, area.height),
     center: true,
+    // Windows: la app dibuja su barra de título (para poner el aviso de actualización junto a minimizar);
+    // los botones de minimizar, maximizar y cerrar siguen siendo los del sistema.
+    ...(IS_WIN
+      ? {
+          titleBarStyle: 'hidden',
+          titleBarOverlay: {
+            color: nativeTheme.shouldUseDarkColors ? BG.dark : BG.light,
+            symbolColor: nativeTheme.shouldUseDarkColors ? '#F2F2F0' : '#0E0E10',
+            height: TITLE_H,
+          },
+        }
+      : {}),
     show: false,
     title: 'Clipsy',
     backgroundColor: nativeTheme.shouldUseDarkColors ? BG.dark : BG.light,
@@ -280,26 +291,27 @@ function toggleQuick(listen = false) {
   else reveal();
 }
 
-function registerShortcuts() {
-  globalShortcut.unregisterAll();
-  try {
-    quickShortcutOk = globalShortcut.register(QUICK_SHORTCUT, () => toggleQuick());
-  } catch {
-    quickShortcutOk = false; // otro programa ya usa la combinación
-  }
-  voiceShortcut = null;
-  if (voice.supported) {
-    for (const acc of VOICE_SHORTCUTS) {
-      try {
-        if (globalShortcut.register(acc, () => toggleQuick(true))) {
-          voiceShortcut = acc;
-          break;
-        }
-      } catch {
-        // ocupada por otro programa: se prueba la siguiente
-      }
-    }
-  }
+function registerShortcuts(paused = false) {
+  shortcuts.registerGlobals({ quick: () => toggleQuick(), ...(voice.supported ? { voice: () => toggleQuick(true) } : {}) }, paused);
+}
+
+/** Tras cambiar un atajo: globales, menú, bandeja y la interfaz de todas las ventanas. */
+function applyShortcuts() {
+  registerShortcuts();
+  buildMenu();
+  buildTray();
+  const list = shortcuts.list();
+  for (const w of [win, quickWin, miniWin]) if (w && !w.isDestroyed()) w.webContents.send('razor:shortcuts', list);
+}
+
+/** «CommandOrControl+Shift+Space» → «Ctrl+Shift+Space» (o ⌘ en Mac) para la bandeja. */
+function accLabel(acc) {
+  return acc ? acc.replace(/^CommandOrControl|^CmdOrCtrl/, IS_MAC ? '⌘' : 'Ctrl') : '';
+}
+/** Atajo del menú para una acción (vacío si la persona lo quitó). */
+function acc(action, extra = {}) {
+  const a = shortcuts.get(action);
+  return a ? { accelerator: a, ...extra } : {};
 }
 
 function showWindow() {
@@ -326,17 +338,17 @@ function buildMenu() {
     {
       label: s.file,
       submenu: [
-        { label: s.newTask, accelerator: 'CmdOrCtrl+N', click: () => send('new:task') },
-        { label: s.newEvent, accelerator: 'CmdOrCtrl+Shift+N', click: () => send('new:event') },
+        { label: s.newTask, ...acc('new:task'), click: () => send('new:task') },
+        { label: s.newEvent, ...acc('new:event'), click: () => send('new:event') },
         { label: s.newReminder, click: () => send('new:reminder') },
         { label: s.newTransaction, click: () => send('new:transaction') },
         { type: 'separator' },
-        { label: s.search, accelerator: 'CmdOrCtrl+K', click: () => send('open:search') },
-        { label: s.quickAdd, accelerator: QUICK_SHORTCUT, registerAccelerator: false, click: () => toggleQuick() },
-        ...(voice.supported ? [{ label: s.voice, ...(voiceShortcut ? { accelerator: voiceShortcut } : {}), registerAccelerator: false, click: () => toggleQuick(true) }] : []),
-        { label: s.mini, accelerator: 'CmdOrCtrl+Shift+T', click: openMini },
+        { label: s.search, ...acc('open:search'), click: () => send('open:search') },
+        { label: s.quickAdd, ...acc('quick', { registerAccelerator: false }), click: () => toggleQuick() },
+        ...(voice.supported ? [{ label: s.voice, ...acc('voice', { registerAccelerator: false }), click: () => toggleQuick(true) }] : []),
+        { label: s.mini, ...acc('mini'), click: openMini },
         { type: 'separator' },
-        { label: s.settings, accelerator: 'CmdOrCtrl+,', click: () => send('open:settings') },
+        { label: s.settings, ...acc('open:settings'), click: () => send('open:settings') },
         ...(IS_MAC ? [] : [{ type: 'separator' }, { label: s.quit, accelerator: 'Ctrl+Q', click: quit }]),
       ],
     },
@@ -344,11 +356,11 @@ function buildMenu() {
     {
       label: s.go,
       submenu: [
-        { label: s.today, accelerator: 'CmdOrCtrl+1', click: () => send('nav:index') },
-        { label: s.calendar, accelerator: 'CmdOrCtrl+2', click: () => send('nav:calendar') },
-        { label: s.lists, accelerator: 'CmdOrCtrl+3', click: () => send('nav:lists') },
-        { label: s.finance, accelerator: 'CmdOrCtrl+4', click: () => send('nav:finance') },
-        { label: s.more, accelerator: 'CmdOrCtrl+5', click: () => send('nav:more') },
+        { label: s.today, ...acc('nav:index'), click: () => send('nav:index') },
+        { label: s.calendar, ...acc('nav:calendar'), click: () => send('nav:calendar') },
+        { label: s.lists, ...acc('nav:lists'), click: () => send('nav:lists') },
+        { label: s.finance, ...acc('nav:finance'), click: () => send('nav:finance') },
+        { label: s.more, ...acc('nav:more'), click: () => send('nav:more') },
       ],
     },
     {
@@ -384,8 +396,8 @@ function buildTray() {
       ...(trayNext ? [{ label: trayNext, enabled: false }, { type: 'separator' }] : []),
       { label: s.open, click: showWindow },
       { label: s.mini, click: openMini },
-      { label: quickShortcutOk ? `${s.quickAdd}  (${IS_MAC ? '⌘⇧Space' : 'Ctrl+Shift+Space'})` : s.quickAdd, click: () => toggleQuick() },
-      ...(voice.supported ? [{ label: voiceShortcut ? `${s.voice}  (${voiceShortcut.replace('CommandOrControl', 'Ctrl')})` : s.voice, click: () => toggleQuick(true) }] : []),
+      { label: shortcuts.get('quick') ? `${s.quickAdd}  (${accLabel(shortcuts.get('quick'))})` : s.quickAdd, click: () => toggleQuick() },
+      ...(voice.supported ? [{ label: shortcuts.get('voice') ? `${s.voice}  (${accLabel(shortcuts.get('voice'))})` : s.voice, click: () => toggleQuick(true) }] : []),
       { type: 'separator' },
       { label: s.newTask, click: () => send('new:task') },
       { label: s.newEvent, click: () => send('new:event') },
@@ -404,11 +416,45 @@ function quit() {
 
 function registerIpc() {
   ipcMain.on('razor:info', (e) => {
-    e.returnValue = { platform: process.platform, version: app.getVersion(), voiceShortcut };
+    e.returnValue = {
+      platform: process.platform,
+      version: app.getVersion(),
+      voiceShortcut: shortcuts.get('voice') || null,
+      shortcuts: shortcuts.list(),
+      // Solo la ventana principal de Windows dibuja su propia barra de título.
+      titleBar: IS_WIN && !!win && e.sender === win.webContents ? TITLE_H : 0,
+    };
   });
   ipcMain.on('razor:focus', showWindow);
   ipcMain.on('razor:open-mini', openMini);
   ipcMain.on('razor:hide-quick', () => quickWin?.hide());
+  // Atajos configurables
+  ipcMain.handle('razor:shortcuts:list', () => shortcuts.list());
+  ipcMain.handle('razor:shortcuts:set', (_e, action, accel) => {
+    const res = shortcuts.set(String(action), String(accel ?? ''), applyShortcuts);
+    return { ...res, list: shortcuts.list() };
+  });
+  ipcMain.handle('razor:shortcuts:reset', () => {
+    shortcuts.reset(applyShortcuts);
+    return shortcuts.list();
+  });
+  // Mientras se graba una combinación, los atajos actuales no deben dispararse (se reactivan solos a los 20 s).
+  ipcMain.on('razor:shortcuts:pause', (_e, paused) => {
+    clearTimeout(shortcutsPausedTimer);
+    if (paused) {
+      registerShortcuts(true);
+      Menu.setApplicationMenu(null);
+      shortcutsPausedTimer = setTimeout(applyShortcuts, 20000);
+    } else applyShortcuts();
+  });
+  // Barra de título propia (Windows): colores de los botones del sistema según el tema de la app.
+  ipcMain.on('razor:titlebar', (_e, color, symbol) => {
+    const hex = /^#[0-9a-f]{6}$/i;
+    if (!IS_WIN || !win || win.isDestroyed() || !hex.test(color) || !hex.test(symbol)) return;
+    try {
+      win.setTitleBarOverlay({ color, symbolColor: symbol, height: TITLE_H });
+    } catch {}
+  });
   // Botón del micrófono de la ventana principal: abre la barra rápida ya escuchando.
   ipcMain.on('razor:quick-voice-open', () => toggleQuick(true));
   // La barra rápida pide la altura que necesita su contenido (cambia con el tamaño de letra y el escalado de Windows).

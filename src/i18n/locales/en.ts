@@ -735,6 +735,23 @@ const en: Dict = {
   'cal.nextYear': 'Next year',
   'upd.newTitle': 'A new version is available: {v}',
   'upd.downloadingBody': 'Downloading ({p}%). Updating then takes a few seconds.',
+  'sc.hint': 'Tap a shortcut to change it and press the new combination. Backspace removes it; Esc cancels.',
+  'sc.press': 'Press the keys…',
+  'sc.none': 'No shortcut',
+  'sc.global': 'Works from any program',
+  'sc.busy': 'Another program already uses this combination: pick another.',
+  'sc.saved': 'Saved',
+  'sc.removed': 'Shortcut removed',
+  'sc.duplicate': 'Already used by “{name}”.',
+  'sc.err.invalid': 'Combine it with Ctrl or Alt (or use an F key).',
+  'sc.err.reserved': 'That combination belongs to Windows or copy/paste: pick another.',
+  'sc.err.taken': 'Another program already uses that combination: pick another.',
+  'sc.err.duplicate': 'That combination is already in use.',
+  'sc.reset': 'Reset all shortcuts',
+  'sc.goTo': 'Go to {name}',
+  'upd.barShort': 'Update',
+  'upd.barReady': 'Update to version {v}',
+  'upd.barDownloading': 'Downloading version {v}: {p}%',
 };
 
 export default en;
