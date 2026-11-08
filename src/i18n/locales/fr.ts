@@ -735,6 +735,23 @@ const fr: Dict = {
   'cal.nextYear': 'Année suivante',
   'upd.newTitle': 'Une nouvelle version est disponible : {v}',
   'upd.downloadingBody': 'Téléchargement ({p} %). Ensuite, la mise à jour prend quelques secondes.',
+  'sc.hint': 'Touchez un raccourci pour le modifier et appuyez sur la nouvelle combinaison. Retour arrière le supprime ; Échap annule.',
+  'sc.press': 'Appuyez sur les touches…',
+  'sc.none': 'Aucun raccourci',
+  'sc.global': 'Fonctionne depuis n’importe quel programme',
+  'sc.busy': 'Un autre programme utilise déjà cette combinaison : choisissez-en une autre.',
+  'sc.saved': 'Enregistré',
+  'sc.removed': 'Raccourci supprimé',
+  'sc.duplicate': 'Déjà utilisée par « {name} ».',
+  'sc.err.invalid': 'Combinez-la avec Ctrl ou Alt (ou utilisez une touche F).',
+  'sc.err.reserved': 'Cette combinaison appartient à Windows ou au copier-coller : choisissez-en une autre.',
+  'sc.err.taken': 'Un autre programme utilise déjà cette combinaison : choisissez-en une autre.',
+  'sc.err.duplicate': 'Cette combinaison est déjà utilisée.',
+  'sc.reset': 'Rétablir tous les raccourcis',
+  'sc.goTo': 'Aller à {name}',
+  'upd.barShort': 'Mettre à jour',
+  'upd.barReady': 'Passer à la version {v}',
+  'upd.barDownloading': 'Téléchargement de la version {v} : {p} %',
 };
 
 export default fr;

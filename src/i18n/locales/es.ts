@@ -759,6 +759,23 @@ const es = {
   'cal.nextYear': 'Año siguiente',
   'upd.newTitle': 'Hay una versión nueva: {v}',
   'upd.downloadingBody': 'Se está descargando ({p} %). Después, actualizar tarda unos segundos.',
+  'sc.hint': 'Toca un atajo para cambiarlo y pulsa la combinación nueva. Retroceso lo quita; Esc cancela.',
+  'sc.press': 'Pulsa las teclas…',
+  'sc.none': 'Sin atajo',
+  'sc.global': 'Funciona desde cualquier programa',
+  'sc.busy': 'Otro programa ya usa esta combinación: elige otra.',
+  'sc.saved': 'Guardado',
+  'sc.removed': 'Atajo quitado',
+  'sc.duplicate': 'Ya la usa «{name}».',
+  'sc.err.invalid': 'Combínala con Ctrl o Alt (o usa una tecla F).',
+  'sc.err.reserved': 'Esa combinación es de Windows o de copiar y pegar: elige otra.',
+  'sc.err.taken': 'Otro programa ya usa esa combinación: elige otra.',
+  'sc.err.duplicate': 'Esa combinación ya está en uso.',
+  'sc.reset': 'Restablecer todos los atajos',
+  'sc.goTo': 'Ir a {name}',
+  'upd.barShort': 'Actualizar',
+  'upd.barReady': 'Actualizar a la versión {v}',
+  'upd.barDownloading': 'Descargando la versión {v}: {p} %',
 };
 
 export default es;

@@ -735,6 +735,23 @@ const pt: Dict = {
   'cal.nextYear': 'Próximo ano',
   'upd.newTitle': 'Há uma versão nova: {v}',
   'upd.downloadingBody': 'Baixando ({p} %). Depois, atualizar leva alguns segundos.',
+  'sc.hint': 'Toque em um atalho para mudá-lo e pressione a nova combinação. Backspace o remove; Esc cancela.',
+  'sc.press': 'Pressione as teclas…',
+  'sc.none': 'Sem atalho',
+  'sc.global': 'Funciona em qualquer programa',
+  'sc.busy': 'Outro programa já usa esta combinação: escolha outra.',
+  'sc.saved': 'Salvo',
+  'sc.removed': 'Atalho removido',
+  'sc.duplicate': 'Já usada por «{name}».',
+  'sc.err.invalid': 'Combine com Ctrl ou Alt (ou use uma tecla F).',
+  'sc.err.reserved': 'Essa combinação é do Windows ou de copiar e colar: escolha outra.',
+  'sc.err.taken': 'Outro programa já usa essa combinação: escolha outra.',
+  'sc.err.duplicate': 'Essa combinação já está em uso.',
+  'sc.reset': 'Restaurar todos os atalhos',
+  'sc.goTo': 'Ir para {name}',
+  'upd.barShort': 'Atualizar',
+  'upd.barReady': 'Atualizar para a versão {v}',
+  'upd.barDownloading': 'Baixando a versão {v}: {p} %',
 };
 
 export default pt;

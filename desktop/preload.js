@@ -10,6 +10,20 @@ contextBridge.exposeInMainWorld('razorDesktop', {
   focus: () => ipcRenderer.send('razor:focus'),
   openMini: () => ipcRenderer.send('razor:open-mini'),
   voiceShortcut: info.voiceShortcut || null,
+  titleBar: info.titleBar || 0,
+  setTitleBar: (color, symbol) => ipcRenderer.send('razor:titlebar', String(color), String(symbol)),
+  shortcuts: {
+    initial: info.shortcuts || [],
+    list: () => ipcRenderer.invoke('razor:shortcuts:list'),
+    set: (action, accel) => ipcRenderer.invoke('razor:shortcuts:set', String(action), String(accel ?? '')),
+    reset: () => ipcRenderer.invoke('razor:shortcuts:reset'),
+    pause: (paused) => ipcRenderer.send('razor:shortcuts:pause', !!paused),
+    onChange: (cb) => {
+      const h = (_e, list) => cb(list);
+      ipcRenderer.on('razor:shortcuts', h);
+      return () => ipcRenderer.removeListener('razor:shortcuts', h);
+    },
+  },
   hideQuick: () => ipcRenderer.send('razor:hide-quick'),
   openQuickVoice: () => ipcRenderer.send('razor:quick-voice-open'),
   setQuickHeight: (h) => ipcRenderer.send('razor:quick-size', Number(h)),

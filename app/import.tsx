@@ -35,7 +35,7 @@ type Fail = Exclude<ImportFile, { ok: true }>['error'];
  * para revisarlo antes de añadirlo.
  */
 export default function Import() {
-  const { c } = useTheme();
+  const { c, isDark } = useTheme();
   const { t, lang } = useT();
   const currency = useStore((s) => s.settings.currency);
   const [goal, setGoal] = useState<ImportGoal | null>(null);
@@ -113,12 +113,12 @@ export default function Import() {
             <View style={[styles.leadIcon, { backgroundColor: c.accent }]}>
               <Icon name="upload" size={20} color={c.onAccent} />
             </View>
-            <View style={{ flex: 1, gap: 4 }}>
-              <Text variant="heading">{t('import.lead')}</Text>
-              <Text variant="body" tone="muted">
-                {t('import.leadSub')}
-              </Text>
-            </View>
+            <Text variant="heading" align="center">
+              {t('import.lead')}
+            </Text>
+            <Text variant="body" tone="muted" align="center" style={{ maxWidth: 520 }}>
+              {t('import.leadSub')}
+            </Text>
           </Animated.View>
 
           <SectionHeader title={t('import.what')} />
@@ -176,7 +176,20 @@ export default function Import() {
                   </Text>
                 </View>
               ) : (
-                <Button title={goal ? t('import.choose') : t('import.pickFirst')} icon="folder" onPress={choose} disabled={!goal} full />
+                // Blanco para que destaque del resto (que va en el color de acento).
+                <PressableScale
+                  onPress={choose}
+                  disabled={!goal}
+                  hapticOnPress
+                  accessibilityRole="button"
+                  accessibilityLabel={goal ? t('import.choose') : t('import.pickFirst')}
+                  style={[styles.white, { borderColor: isDark ? 'transparent' : c.borderStrong, opacity: goal ? 1 : 0.5 }]}
+                >
+                  <Icon name="folder" size={18} color="#0E0E10" />
+                  <Text variant="bodyStrong" style={{ color: '#0E0E10' }}>
+                    {goal ? t('import.choose') : t('import.pickFirst')}
+                  </Text>
+                </PressableScale>
               )
             ) : (
               <Text variant="body" tone="muted">
@@ -283,12 +296,26 @@ export default function Import() {
 }
 
 const styles = StyleSheet.create({
-  lead: { flexDirection: 'row', gap: space.md, padding: space.lg, borderRadius: radius.lg, alignItems: 'flex-start' },
+  lead: { gap: space.sm, padding: space.xl, borderRadius: radius.lg, alignItems: 'center' },
   leadIcon: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   goals: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   goal: { flexBasis: '48%', flexGrow: 1, minWidth: 240, flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, borderRadius: radius.lg, borderWidth: 1 },
   note: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginTop: space.md },
   error: { flexDirection: 'row', alignItems: 'center', gap: space.sm, padding: space.md, borderRadius: radius.md, marginTop: space.md },
+  white: {
+    height: 52,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.sm,
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+  },
   reading: { height: 50, borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.sm },
   reviewHead: { flexDirection: 'row', alignItems: 'center', gap: space.md, marginBottom: space.md },
   item: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.md },

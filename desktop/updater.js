@@ -57,7 +57,8 @@ async function check() {
 function install() {
   if (state.status === 'ready' && native()) {
     beforeInstall();
-    autoUpdater.quitAndInstall(false, true);
+    // En silencio y se vuelve a abrir sola: para la persona es solo un reinicio de unos segundos.
+    autoUpdater.quitAndInstall(true, true);
   } else if (state.status === 'available' && state.manual) {
     shell.openExternal(license.accountUrl('downloads'));
   }
@@ -79,7 +80,8 @@ function init(onChange, onBeforeInstall) {
   }
   // Al abrir la app se revisa enseguida; si hay versión nueva, se descarga y se pide actualizar.
   setTimeout(check, 2 * 1000);
-  setInterval(check, 6 * 60 * 60 * 1000).unref?.();
+  // Revisar cuesta casi nada (latest.yml pesa menos de 1 KB); la descarga solo ocurre si hay versión nueva.
+  setInterval(check, 30 * 60 * 1000).unref?.();
 }
 
 /** Al volver a mostrar la ventana: revisa si pasó un rato desde la última vez. */

@@ -735,6 +735,23 @@ const de: Dict = {
   'cal.nextYear': 'Nächstes Jahr',
   'upd.newTitle': 'Eine neue Version ist da: {v}',
   'upd.downloadingBody': 'Wird geladen ({p} %). Das Update dauert danach nur Sekunden.',
+  'sc.hint': 'Tippe auf eine Tastenkombination, um sie zu ändern, und drück die neue. Rücktaste entfernt sie; Esc bricht ab.',
+  'sc.press': 'Tasten drücken…',
+  'sc.none': 'Keine',
+  'sc.global': 'Funktioniert in jedem Programm',
+  'sc.busy': 'Ein anderes Programm nutzt diese Kombination schon: wähl eine andere.',
+  'sc.saved': 'Gespeichert',
+  'sc.removed': 'Kombination entfernt',
+  'sc.duplicate': 'Wird schon für „{name}“ genutzt.',
+  'sc.err.invalid': 'Kombiniere sie mit Strg oder Alt (oder nimm eine F-Taste).',
+  'sc.err.reserved': 'Diese Kombination gehört zu Windows oder Kopieren/Einfügen: wähl eine andere.',
+  'sc.err.taken': 'Ein anderes Programm nutzt diese Kombination schon: wähl eine andere.',
+  'sc.err.duplicate': 'Diese Kombination ist schon vergeben.',
+  'sc.reset': 'Alle Tastenkombinationen zurücksetzen',
+  'sc.goTo': 'Zu {name}',
+  'upd.barShort': 'Aktualisieren',
+  'upd.barReady': 'Auf Version {v} aktualisieren',
+  'upd.barDownloading': 'Version {v} wird geladen: {p} %',
 };
 
 export default de;
