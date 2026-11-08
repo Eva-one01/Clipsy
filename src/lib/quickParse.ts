@@ -110,6 +110,20 @@ const INCOME_CATS: [string, string][] = [
   ['gift', 'regalo|gift|presente|cadeau|geschenk|подарок'],
 ];
 
+/** Categoría de un gasto o ingreso a partir de su descripción («almuerzo» → food), o null. Lo usa la importación. */
+export function categoryFor(text: string, type: 'expense' | 'income'): string | null {
+  for (const [key, alts] of type === 'income' ? INCOME_CATS : EXPENSE_CATS) if (word(alts).test(text)) return key;
+  return null;
+}
+
+/** ¿Habla de un ingreso? («sueldo», «me pagaron», «salary»…). Lo usa la importación. */
+export function looksLikeIncome(text: string): boolean {
+  return INCOME_CATS.some(([, alts]) => word(alts).test(text)) || word('ingreso|income|entrada|abono|crédito|credito|recibido|received|recebido|reçu|recu|einnahme|доход').test(text);
+}
+
+/** Nombres completos de los días en los 6 idiomas (0 = domingo). */
+export const WEEKDAY_NAMES: readonly [number, string][] = WEEKDAYS;
+
 function strip(s: string, re: RegExp) {
   return s.replace(re, (_m, pre: string) => pre ?? ' ');
 }

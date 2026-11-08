@@ -74,6 +74,11 @@ export interface SyncResponse {
   updatedAt?: string;
 }
 
+/** Archivo leído para importar: filas de texto (las tablas conservan sus columnas). */
+export type ImportFile =
+  | { ok: true; name: string; source: string; rows: string[][] }
+  | { ok: false; error: 'canceled' | 'too_big' | 'old_format' | 'unsupported' | 'ocr_unsupported' | 'empty' | 'ocr' | 'read' };
+
 /** API expuesta por desktop/preload.js (contextBridge). Solo existe dentro de la app de escritorio. */
 export interface RazorDesktop {
   platform: 'darwin' | 'win32' | 'linux';
@@ -81,7 +86,7 @@ export interface RazorDesktop {
   focus(): void;
   /** Ventana «Hoy» flotante. */
   openMini?(): void;
-  /** Atajo de dictado que se pudo registrar (p. ej. «CommandOrControl+Alt+D»), o null si otro programa los usa todos. */
+  /** Atajo de dictado que se pudo registrar (p. ej. «CommandOrControl+Shift+D»), o null si otro programa los usa todos. */
   voiceShortcut?: string | null;
   /** Oculta la barra de alta rápida. */
   hideQuick?(): void;
@@ -94,8 +99,13 @@ export interface RazorDesktop {
   /** Texto de lo próximo (alarma, recordatorio o evento) para la bandeja del sistema. */
   setTrayInfo?(label: string | null): void;
   onQuickOpen?(cb: () => void): () => void;
-  /** Atajo de voz (Ctrl+Alt+D): la barra rápida empieza o deja de escuchar. */
+  /** Atajo de voz (Ctrl+Shift+D): la barra rápida empieza o deja de escuchar. */
   onQuickVoice?(cb: () => void): () => void;
+  /** Importar: diálogo del sistema + lectura del archivo en el equipo (desktop/importer.js). */
+  importer?: {
+    pick(lang: string): Promise<ImportFile>;
+    info(): Promise<{ photos: boolean }>;
+  };
   voice?: {
     status(): Promise<VoiceState>;
     install(): Promise<VoiceState>;
@@ -144,14 +154,14 @@ export const isDesktopApp = desktop !== null;
 /** Atajo legible para mostrar en la ayuda: ⌘ en Mac, Ctrl en Windows/Linux. */
 export const modKey = desktop?.platform === 'darwin' ? '⌘' : 'Ctrl';
 
-/** Teclas del atajo de dictado registrado («CommandOrControl+Alt+D» → ['Mod', 'Alt', 'D']), o null. */
+/** Teclas del atajo de dictado registrado («CommandOrControl+Shift+D» → ['Mod', 'Shift', 'D']), o null. */
 export function voiceKeys(): string[] | null {
   const acc = desktop?.voiceShortcut;
   if (!acc) return null;
   return acc.split('+').map((k) => (k === 'CommandOrControl' ? 'Mod' : k));
 }
 
-/** El atajo de dictado como texto («Ctrl+Alt+D»), o null si no hay. */
+/** El atajo de dictado como texto («Ctrl+Shift+D»), o null si no hay. */
 export function voiceKeysLabel(): string | null {
   const keys = voiceKeys();
   return keys ? keys.map((k) => (k === 'Mod' ? modKey : k)).join('+') : null;

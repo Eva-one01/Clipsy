@@ -82,7 +82,9 @@ La app de escritorio usa **el mismo código** que la móvil: Expo la exporta com
 
 **Alarmas y recordatorios**: llegan como notificaciones del sistema. Al cerrar la ventana Razor sigue en la bandeja (barra de menús en Mac) para avisarte; en Ajustes → Escritorio puedes hacer que arranque solo al iniciar sesión. Si sales del todo, no hay avisos hasta que vuelvas a abrirla.
 
-**Dictado por voz (Windows)**: `Ctrl+Alt+D` («D» de dictar) desde cualquier programa (o el micrófono junto a «Nueva tarea» o en la barra rápida) abre la barra escuchando. Al callar, lo dicho se escribe en el campo y se guarda solo al momento, salvo que lo corrijas o pulses Esc. Ejemplos: «recuérdame llamar a Juan en 20 minutos», «pon una alarma a las 6 y media», «gasté 35 mil en almuerzo».
+**Dictado por voz (Windows)**: `Ctrl+Shift+D` («D» de dictar) desde cualquier programa (o el micrófono junto a «Nueva tarea» o en la barra rápida) abre la barra escuchando. Al callar, lo dicho se escribe en el campo y se guarda solo al momento, salvo que lo corrijas o pulses Esc. Ejemplos: «recuérdame llamar a Juan en 20 minutos», «pon una alarma a las 6 y media», «gasté 35 mil en almuerzo».
+
+**Importar** (barra lateral, encima de Ayuda): trae la rutina, el horario, la agenda, las tareas o las finanzas que la persona ya tiene en un Excel (.xlsx), CSV, Word (.docx), PDF, texto o una foto. El archivo se lee en el equipo (`desktop/importer.js`; fotos y PDF con el reconocedor de texto de Windows, `desktop/ocr.ps1`), no se guarda, y lo que se entendió (`src/lib/importParse.ts`) se muestra para revisarlo antes de añadirlo. Pruebas: `npm run test:import`.
 - El audio se pasa a texto **en el equipo** con [whisper.cpp](https://github.com/ggml-org/whisper.cpp) (`desktop/voice.js`) y nunca sale de él.
 - El motor y el modelo `ggml-base-q5_1` (unos 70 MB) **no van en el instalador**. Se descargan una sola vez cuando la persona activa la voz, desde GitHub y Hugging Face, y se comprueba su SHA-256 antes de usarlos. Quedan en `%APPDATA%\Razor\voice` y se pueden quitar desde *Ajustes → Escritorio*.
 - Para cambiar de versión o de modelo, actualiza la URL, el tamaño y el SHA-256 en `desktop/voice.js`.

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, type ScrollViewProps } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View, type ScrollViewProps } from 'react-native';
 import Animated, { Extrapolation, interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CONTENT_MAX_WIDTH, useIsDesktop } from '@/desktop/layout';
@@ -7,6 +7,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/tokens';
 import { HEADER_CLOCKS_HEIGHT, HeaderClocks, useHeaderClocks } from './HeaderClocks';
 import { Text } from './Text';
+import { Icon } from './ui';
 
 export const TAB_BAR_HEIGHT = 62;
 
@@ -24,13 +25,17 @@ interface ScreenProps {
   leading?: ReactNode;
   /** Muestra los relojes fijos arriba a la derecha (por defecto sí). */
   clocks?: boolean;
+  /** Si se indica, el título se puede pulsar (con una flecha) para abrir un selector. */
+  onTitlePress?: () => void;
+  titleOpen?: boolean;
+  titleHint?: string;
 }
 
 /**
  * Contenedor estándar: título grande que se desvanece hacia una barra compacta
  * al desplazarse (patrón iOS), con márgenes y espacio para la barra de pestañas.
  */
-export function Screen({ title, subtitle, actions, children, tabbed, header, scroll = true, leading, clocks = true }: ScreenProps) {
+export function Screen({ title, subtitle, actions, children, tabbed, header, scroll = true, leading, clocks = true, onTitlePress, titleOpen, titleHint }: ScreenProps) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   const isDesktop = useIsDesktop();
@@ -74,9 +79,24 @@ export function Screen({ title, subtitle, actions, children, tabbed, header, scr
                   {subtitle}
                 </Text>
               ) : null}
-              <Text variant="display" accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-                {title}
-              </Text>
+              {onTitlePress ? (
+                <Pressable
+                  onPress={onTitlePress}
+                  accessibilityRole="button"
+                  accessibilityLabel={titleHint ? `${title} · ${titleHint}` : title}
+                  accessibilityState={{ expanded: !!titleOpen }}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, alignSelf: 'flex-start', maxWidth: '100%' }}
+                >
+                  <Text variant="display" accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ flexShrink: 1 }}>
+                    {title}
+                  </Text>
+                  <Icon name={titleOpen ? 'chevron-up' : 'chevron-down'} size={22} color={c.textMuted} />
+                </Pressable>
+              ) : (
+                <Text variant="display" accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+                  {title}
+                </Text>
+              )}
             </View>
             {actions ? <View style={{ flexDirection: 'row', gap: space.xs }}>{actions}</View> : null}
           </View>
