@@ -5,7 +5,7 @@ import { Logo } from '@/components/Logo';
 import { PressableScale } from '@/components/PressableScale';
 import { Text } from '@/components/Text';
 import { Icon } from '@/components/ui';
-import { desktop } from '@/desktop/bridge';
+import { desktop, voiceKeysLabel } from '@/desktop/bridge';
 import { useVoice } from '@/desktop/voice';
 import { useT } from '@/i18n/useT';
 import { describeQuick, KIND_ICON, runQuick } from '@/lib/quickAdd';
@@ -17,7 +17,7 @@ import { motion, radius, space } from '@/theme/tokens';
 const KINDS: QuickKind[] = ['task', 'event', 'reminder', 'alarm', 'expense', 'idea'];
 const AUTO_SAVE_MS = 1600; // tras dictar, se guarda solo si nadie corrige el texto
 
-/** Barra de alta rápida del escritorio (Ctrl/⌘+Shift+Espacio desde cualquier programa; Ctrl+Alt+Espacio para dictar). */
+/** Barra de alta rápida del escritorio (Ctrl/⌘+Shift+Espacio desde cualquier programa; Ctrl+Alt+D para dictar). */
 export default function Quick() {
   const { c } = useTheme();
   const { t } = useT();
@@ -108,6 +108,8 @@ export default function Quick() {
 
   return (
     <View style={[styles.root, { backgroundColor: c.elevated, borderColor: c.border }]}>
+      {/* La ventana toma la altura del contenido: con letra más grande o escalado de Windows nada se corta. */}
+      <View onLayout={(e) => desktop?.setQuickHeight?.(Math.ceil(e.nativeEvent.layout.height) + 2)}>
       <View style={styles.row}>
         <Logo height={20} />
         <TextInput
@@ -136,7 +138,7 @@ export default function Quick() {
           <PressableScale
             onPress={voice.needsSetup ? voice.install : voice.toggle}
             accessibilityRole="button"
-            accessibilityLabel={t('voice.mic')}
+            accessibilityLabel={voiceKeysLabel() ? `${t('voice.mic')} (${voiceKeysLabel()})` : t('voice.mic')}
             accessibilityState={{ busy: voice.phase !== 'idle' }}
             style={[
               styles.mic,
@@ -213,6 +215,7 @@ export default function Quick() {
           {autoSave ? t('voice.autoSave') : t('quick.keys')}
         </Text>
       </View>
+      </View>
     </View>
   );
 }
@@ -240,7 +243,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, height: 72 },
   input: { flex: 1, fontSize: 21, height: '100%', outlineStyle: 'none' } as object,
   preview: { flexDirection: 'row', alignItems: 'center', minHeight: 44, paddingHorizontal: space.lg, borderTopWidth: StyleSheet.hairlineWidth },
-  kinds: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: space.lg, paddingBottom: space.md, paddingTop: 2 },
+  kinds: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, paddingHorizontal: space.lg, paddingBottom: space.md, paddingTop: 2 },
   kind: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 26, paddingHorizontal: 9, borderRadius: 13, borderWidth: StyleSheet.hairlineWidth },
   mic: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth },
 });

@@ -81,14 +81,20 @@ export interface RazorDesktop {
   focus(): void;
   /** Ventana «Hoy» flotante. */
   openMini?(): void;
+  /** Atajo de dictado que se pudo registrar (p. ej. «CommandOrControl+Alt+D»), o null si otro programa los usa todos. */
+  voiceShortcut?: string | null;
   /** Oculta la barra de alta rápida. */
   hideQuick?(): void;
+  /** Abre la barra rápida ya escuchando (botón del micrófono de la ventana principal). */
+  openQuickVoice?(): void;
+  /** La barra rápida ajusta la altura de su ventana a su contenido. */
+  setQuickHeight?(height: number): void;
   /** Abre la ventana principal en una ruta (desde las ventanas auxiliares). */
   openInMain?(route: string): void;
   /** Texto de lo próximo (alarma, recordatorio o evento) para la bandeja del sistema. */
   setTrayInfo?(label: string | null): void;
   onQuickOpen?(cb: () => void): () => void;
-  /** Atajo de voz (Ctrl+Alt+Espacio): la barra rápida empieza o deja de escuchar. */
+  /** Atajo de voz (Ctrl+Alt+D): la barra rápida empieza o deja de escuchar. */
   onQuickVoice?(cb: () => void): () => void;
   voice?: {
     status(): Promise<VoiceState>;
@@ -137,3 +143,16 @@ export const isDesktopApp = desktop !== null;
 
 /** Atajo legible para mostrar en la ayuda: ⌘ en Mac, Ctrl en Windows/Linux. */
 export const modKey = desktop?.platform === 'darwin' ? '⌘' : 'Ctrl';
+
+/** Teclas del atajo de dictado registrado («CommandOrControl+Alt+D» → ['Mod', 'Alt', 'D']), o null. */
+export function voiceKeys(): string[] | null {
+  const acc = desktop?.voiceShortcut;
+  if (!acc) return null;
+  return acc.split('+').map((k) => (k === 'CommandOrControl' ? 'Mod' : k));
+}
+
+/** El atajo de dictado como texto («Ctrl+Alt+D»), o null si no hay. */
+export function voiceKeysLabel(): string | null {
+  const keys = voiceKeys();
+  return keys ? keys.map((k) => (k === 'Mod' ? modKey : k)).join('+') : null;
+}

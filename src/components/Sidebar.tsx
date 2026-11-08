@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View, type PressableStateCallbackType } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import { desktop, modKey } from '@/desktop/bridge';
+import { desktop, modKey, voiceKeysLabel } from '@/desktop/bridge';
 import { useDesktopState } from '@/desktop/licensing';
 import { openPalette } from '@/lib/palette';
 import { SIDEBAR_WIDTH } from '@/desktop/layout';
@@ -32,6 +32,8 @@ export function Sidebar({ state, navigation }: TabBarProps) {
   }, [state.index, y]);
 
   const pill = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }] }));
+  // El dictado solo existe en la app de escritorio de Windows (desktop/voice.js).
+  const voiceOn = desktop?.platform === 'win32' && !!desktop.openQuickVoice;
 
   return (
     <View style={[styles.bar, { backgroundColor: c.surface, borderRightColor: c.border }]} accessibilityRole="tablist">
@@ -42,19 +44,32 @@ export function Sidebar({ state, navigation }: TabBarProps) {
         </Text>
       </View>
 
-      <PressableScale
-        onPress={() => router.push('/form/task')}
-        accessibilityLabel={t('task.new')}
-        style={[styles.cta, { backgroundColor: c.accent }]}
-      >
-        <Icon name="plus" size={16} color={c.onAccent} />
-        <Text variant="bodyStrong" style={{ color: c.onAccent, flex: 1 }} numberOfLines={1}>
-          {t('task.new')}
-        </Text>
-        <Text variant="caption" style={{ color: c.onAccent, opacity: 0.7 }}>
-          {modKey === '⌘' ? '⌘N' : 'Ctrl+N'}
-        </Text>
-      </PressableScale>
+      <View style={styles.ctaRow}>
+        <PressableScale
+          onPress={() => router.push('/form/task')}
+          accessibilityLabel={t('task.new')}
+          style={[styles.cta, { backgroundColor: c.accent, flex: 1 }]}
+        >
+          <Icon name="plus" size={16} color={c.onAccent} />
+          <Text variant="bodyStrong" style={{ color: c.onAccent, flex: 1 }} numberOfLines={1}>
+            {t('task.new')}
+          </Text>
+          <Text variant="caption" style={{ color: c.onAccent, opacity: 0.7 }}>
+            {modKey === '⌘' ? '⌘N' : 'Ctrl+N'}
+          </Text>
+        </PressableScale>
+        {/* Dictar: abre la barra rápida ya escuchando («recuérdame…», «gasté…», «reunión el lunes a las 10»). */}
+        {voiceOn ? (
+          <PressableScale
+            onPress={() => desktop?.openQuickVoice?.()}
+            accessibilityRole="button"
+            accessibilityLabel={voiceKeysLabel() ? `${t('voice.mic')} (${voiceKeysLabel()})` : t('voice.mic')}
+            style={[styles.mic, { backgroundColor: c.accentSoft, borderColor: c.accent }]}
+          >
+            <Icon name="mic" size={17} color={c.accent} />
+          </PressableScale>
+        ) : null}
+      </View>
 
       <Pressable
         onPress={() => openPalette()}
@@ -171,6 +186,7 @@ const styles = StyleSheet.create({
     paddingBottom: space.lg,
   },
   brand: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.sm, marginBottom: space.xl },
+  ctaRow: { flexDirection: 'row', gap: space.sm, marginBottom: space.lg },
   cta: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -178,8 +194,8 @@ const styles = StyleSheet.create({
     height: 40,
     paddingHorizontal: space.md,
     borderRadius: radius.md,
-    marginBottom: space.lg,
   },
+  mic: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth },
   search: { flexDirection: 'row', alignItems: 'center', gap: space.sm, height: 34, paddingHorizontal: space.md, borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, marginTop: -space.sm, marginBottom: space.lg },
   trial: { borderRadius: radius.md, padding: space.md, gap: 4, marginBottom: space.md },
   trialBtn: { marginTop: 6, height: 30, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },

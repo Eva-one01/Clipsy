@@ -9,7 +9,10 @@ contextBridge.exposeInMainWorld('razorDesktop', {
   version: info.version,
   focus: () => ipcRenderer.send('razor:focus'),
   openMini: () => ipcRenderer.send('razor:open-mini'),
+  voiceShortcut: info.voiceShortcut || null,
   hideQuick: () => ipcRenderer.send('razor:hide-quick'),
+  openQuickVoice: () => ipcRenderer.send('razor:quick-voice-open'),
+  setQuickHeight: (h) => ipcRenderer.send('razor:quick-size', Number(h)),
   openInMain: (route) => ipcRenderer.send('razor:open-in-main', String(route)),
   setTrayInfo: (label) => ipcRenderer.send('razor:tray-info', label ? String(label) : null),
   onQuickOpen: (cb) => {
