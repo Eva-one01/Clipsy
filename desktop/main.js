@@ -35,9 +35,13 @@ let quickWin = null;
 let tray = null;
 let trayNext = null; // «Reunión · 10:00»: lo próximo que va a sonar o empezar
 const QUICK_SHORTCUT = 'CommandOrControl+Shift+Space';
-const VOICE_SHORTCUT = 'CommandOrControl+Alt+Space'; // abre la barra rápida ya escuchando
+// Dictado: abre la barra rápida ya escuchando. Ctrl+Alt+D («D» de dictar) no lo usan Windows, los
+// navegadores ni las apps de reuniones, y AltGr+D no escribe ningún carácter en los teclados que
+// soporta Clipsy. Si otro programa ya lo tiene, se prueba la siguiente. (Ctrl+Alt+Espacio lo usa la
+// app de Claude y Alt+Espacio el lanzador de PowerToys y ChatGPT.)
+const VOICE_SHORTCUTS = ['CommandOrControl+Alt+D', 'CommandOrControl+Shift+Alt+D'];
 let quickShortcutOk = false;
-let voiceShortcutOk = false;
+let voiceShortcut = null; // la combinación que se consiguió registrar, o null si todas están ocupadas
 let quitting = false;
 let lang = (app.getLocale() || 'en').slice(0, 2);
 const startHidden = process.argv.includes('--hidden') || (IS_MAC && app.getLoginItemSettings().wasOpenedAtLogin);
@@ -93,11 +97,16 @@ function registerProtocol() {
 /* ───────────── Ventana ───────────── */
 
 function createWindow() {
+  // En portátiles con pantalla pequeña o escalado de Windows al 125-150 % (p. ej. 1366×768 → 1093×582
+  // útiles), 1200×800 y un mínimo de 900×620 no cabían: la ventana quedaba cortada por abajo.
+  const area = screen.getPrimaryDisplay().workAreaSize;
+  const fit = (want, avail) => Math.min(want, Math.round(avail * 0.92));
   win = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    minWidth: 900,
-    minHeight: 620,
+    width: fit(1200, area.width),
+    height: fit(800, area.height),
+    minWidth: Math.min(900, area.width),
+    minHeight: Math.min(620, area.height),
+    center: true,
     show: false,
     title: 'Clipsy',
     backgroundColor: nativeTheme.shouldUseDarkColors ? BG.dark : BG.light,
@@ -227,8 +236,10 @@ function toggleQuick(listen = false) {
   }
   if (!quickWin) {
     quickWin = new BrowserWindow({
-      width: 640,
-      height: 188,
+      // Ancho fijo; la altura la ajusta la propia barra a su contenido (razor:quick-size).
+      width: 720,
+      height: 196,
+      useContentSize: true,
       frame: false,
       resizable: false,
       minimizable: false,
@@ -275,11 +286,17 @@ function registerShortcuts() {
   } catch {
     quickShortcutOk = false; // otro programa ya usa la combinación
   }
+  voiceShortcut = null;
   if (voice.supported) {
-    try {
-      voiceShortcutOk = globalShortcut.register(VOICE_SHORTCUT, () => toggleQuick(true));
-    } catch {
-      voiceShortcutOk = false;
+    for (const acc of VOICE_SHORTCUTS) {
+      try {
+        if (globalShortcut.register(acc, () => toggleQuick(true))) {
+          voiceShortcut = acc;
+          break;
+        }
+      } catch {
+        // ocupada por otro programa: se prueba la siguiente
+      }
     }
   }
 }
@@ -314,7 +331,7 @@ function buildMenu() {
         { type: 'separator' },
         { label: s.search, accelerator: 'CmdOrCtrl+K', click: () => send('open:search') },
         { label: s.quickAdd, accelerator: QUICK_SHORTCUT, registerAccelerator: false, click: () => toggleQuick() },
-        ...(voice.supported ? [{ label: s.voice, accelerator: VOICE_SHORTCUT, registerAccelerator: false, click: () => toggleQuick(true) }] : []),
+        ...(voice.supported ? [{ label: s.voice, ...(voiceShortcut ? { accelerator: voiceShortcut } : {}), registerAccelerator: false, click: () => toggleQuick(true) }] : []),
         { label: s.mini, accelerator: 'CmdOrCtrl+Shift+T', click: openMini },
         { type: 'separator' },
         { label: s.settings, accelerator: 'CmdOrCtrl+,', click: () => send('open:settings') },
@@ -366,7 +383,7 @@ function buildTray() {
       { label: s.open, click: showWindow },
       { label: s.mini, click: openMini },
       { label: quickShortcutOk ? `${s.quickAdd}  (${IS_MAC ? '⌘⇧Space' : 'Ctrl+Shift+Space'})` : s.quickAdd, click: () => toggleQuick() },
-      ...(voice.supported ? [{ label: voiceShortcutOk ? `${s.voice}  (Ctrl+Alt+Space)` : s.voice, click: () => toggleQuick(true) }] : []),
+      ...(voice.supported ? [{ label: voiceShortcut ? `${s.voice}  (${voiceShortcut.replace('CommandOrControl', 'Ctrl')})` : s.voice, click: () => toggleQuick(true) }] : []),
       { type: 'separator' },
       { label: s.newTask, click: () => send('new:task') },
       { label: s.newEvent, click: () => send('new:event') },
@@ -385,11 +402,20 @@ function quit() {
 
 function registerIpc() {
   ipcMain.on('razor:info', (e) => {
-    e.returnValue = { platform: process.platform, version: app.getVersion() };
+    e.returnValue = { platform: process.platform, version: app.getVersion(), voiceShortcut };
   });
   ipcMain.on('razor:focus', showWindow);
   ipcMain.on('razor:open-mini', openMini);
   ipcMain.on('razor:hide-quick', () => quickWin?.hide());
+  // Botón del micrófono de la ventana principal: abre la barra rápida ya escuchando.
+  ipcMain.on('razor:quick-voice-open', () => toggleQuick(true));
+  // La barra rápida pide la altura que necesita su contenido (cambia con el tamaño de letra y el escalado de Windows).
+  ipcMain.on('razor:quick-size', (_e, h) => {
+    const height = Math.round(Math.min(420, Math.max(120, Number(h) || 0)));
+    if (!quickWin || quickWin.isDestroyed()) return;
+    const [w, cur] = quickWin.getContentSize();
+    if (Math.abs(cur - height) > 1) quickWin.setContentSize(w, height);
+  });
   // Desde las ventanas auxiliares: abre la ventana principal en una pantalla de la app.
   ipcMain.on('razor:open-in-main', (_e, route) => {
     const r = String(route);
@@ -460,8 +486,8 @@ function start() {
   registerProtocol();
   registerPermissions();
   registerIpc();
+  registerShortcuts(); // antes de abrir ventanas: la interfaz lee qué atajo de voz quedó registrado
   createWindow();
-  registerShortcuts();
   buildMenu();
   buildTray();
   license.init((st) => win?.webContents.send('razor:license', st));

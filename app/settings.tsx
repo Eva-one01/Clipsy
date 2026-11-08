@@ -9,7 +9,7 @@ import { Screen } from '@/components/Screen';
 import { Segmented } from '@/components/Segmented';
 import { Text } from '@/components/Text';
 import { Card, Chip, Divider, Icon, IconButton, ListRow, SectionHeader, Toggle } from '@/components/ui';
-import { desktop, type VoiceState } from '@/desktop/bridge';
+import { desktop, voiceKeysLabel, type VoiceState } from '@/desktop/bridge';
 import { useDesktopState } from '@/desktop/licensing';
 import { disableSync, syncNow, useSync } from '@/desktop/sync';
 import { ShortcutsCard } from '@/components/Shortcuts';
@@ -285,7 +285,9 @@ function VoiceRows() {
   const subtitle = st.installing
     ? t('voice.downloading', { p: Math.round(st.progress * 100) })
     : st.installed
-      ? t('voice.sub')
+      ? voiceKeysLabel()
+        ? t('voice.sub', { keys: voiceKeysLabel() ?? '' })
+        : t('voice.subNoKey')
       : st.error
         ? t('voice.installFailed')
         : t('voice.setup', { mb: st.sizeMB });

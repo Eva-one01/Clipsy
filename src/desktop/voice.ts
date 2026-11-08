@@ -59,7 +59,10 @@ async function record(onLevel: (v: number) => void): Promise<Recording> {
   let heard = false;
   let quietMs = 0;
   let totalMs = 0;
-  let floor = 0.01; // ruido de fondo, se ajusta con lo primero que se graba
+  // Ruido de fondo: sigue al nivel más bajo que se oye. Antes se medía con los primeros 0,3 s y, si la
+  // persona hablaba enseguida, su propia voz quedaba como «ruido» y se descartaba todo («No te escuché»).
+  let floor = 0.003;
+  let peak = 0;
   let settle: (v: ArrayBuffer | null) => void = () => undefined;
   const done = new Promise<ArrayBuffer | null>((r) => (settle = r));
   let ended = false;
@@ -71,7 +74,9 @@ async function record(onLevel: (v: number) => void): Promise<Recording> {
     stream.getTracks().forEach((t) => t.stop());
     ctx.close().catch(() => undefined);
     onLevel(0);
-    settle(keep && heard ? wav(chunks, RATE * 1.1) : null);
+    // Si hubo algo de sonido se transcribe aunque no se detectara voz con claridad (micrófonos bajos):
+    // whisper decide, y lo que no sea habla se filtra en desktop/voice.js.
+    settle(keep && (heard || peak > 0.004) ? wav(chunks, RATE * 1.1) : null);
   };
   node.onaudioprocess = (e) => {
     const data = new Float32Array(e.inputBuffer.getChannelData(0));
@@ -81,8 +86,9 @@ async function record(onLevel: (v: number) => void): Promise<Recording> {
     const rms = Math.sqrt(sum / data.length);
     const ms = (data.length / RATE) * 1000;
     totalMs += ms;
-    if (totalMs <= 300) floor = Math.max(floor, rms * 1.5);
-    const speaking = rms > Math.max(0.02, floor * 2);
+    peak = Math.max(peak, rms);
+    floor = rms < floor ? rms : floor + (rms - floor) * 0.02;
+    const speaking = rms > Math.max(0.008, floor * 3);
     onLevel(Math.min(1, rms * 8));
     if (speaking) {
       heard = true;
