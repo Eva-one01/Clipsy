@@ -545,6 +545,10 @@ function start() {
     (st) => win?.webContents.send('razor:update', st),
     () => {
       quitting = true; // la ventana no se esconde en la bandeja: se cierra para instalar
+      try {
+        tray?.destroy();
+        tray = null;
+      } catch {}
     },
   );
 
