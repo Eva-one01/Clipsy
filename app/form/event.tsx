@@ -11,7 +11,6 @@ import { Text } from '@/components/Text';
 import { useT } from '@/i18n/useT';
 import { dateToTime, formatLead, fromKey, minutesToTime, repeatLabel, timeToDate, timeToMinutes, toKey, todayKey } from '@/lib/date';
 import { showDialog } from '@/lib/dialog';
-import { haptic } from '@/lib/haptics';
 import { ensurePermission } from '@/lib/notifications';
 import { useStore } from '@/store';
 import type { Repeat } from '@/store/types';
@@ -99,7 +98,6 @@ export default function EventForm() {
                 icon="trash-2"
                 full
                 onPress={() => {
-                  haptic.warning();
                   showDialog(t('ev.deleteWhich'), t('ev.deleteWhichBody'), [
                     { text: t('common.cancel'), style: 'cancel' },
                     {

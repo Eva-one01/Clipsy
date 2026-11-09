@@ -8,7 +8,6 @@ import { Input } from '@/components/Input';
 import { Text } from '@/components/Text';
 import { Chip } from '@/components/ui';
 import { useT } from '@/i18n/useT';
-import { promptExactAlarmsIfNeeded } from '@/lib/exactAlarms';
 import { ensurePermission } from '@/lib/notifications';
 import { useStore } from '@/store';
 
@@ -51,10 +50,9 @@ export default function ReminderForm() {
   };
 
   const save = async () => {
-    const allowed = await ensurePermission();
+    await ensurePermission();
     if (existing) await update(existing.id, { title: title.trim(), at: at.getTime(), done: false });
     else await add({ title: title.trim(), at: at.getTime() });
-    if (allowed) promptExactAlarmsIfNeeded();
   };
 
   return (

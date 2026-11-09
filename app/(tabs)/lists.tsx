@@ -13,7 +13,6 @@ import type { TKey } from '@/i18n';
 import { useT } from '@/i18n/useT';
 import { diffDays, formatShortDate, relativeDay, todayKey } from '@/lib/date';
 import { showDialog } from '@/lib/dialog';
-import { haptic } from '@/lib/haptics';
 import { useStore } from '@/store';
 import type { Goal, Idea, Task } from '@/store/types';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -91,7 +90,6 @@ function TasksPane() {
         submitBehavior="submit"
         onSubmitEditing={() => {
           if (!draft.trim()) return;
-          haptic.soft();
           addTask({ title: draft });
           setDraft('');
         }}
@@ -125,7 +123,7 @@ function TasksPane() {
             onAction={() =>
               showDialog(t('lists.clearTitle'), t('lists.clearBody', { n: done.length }), [
                 { text: t('common.cancel'), style: 'cancel' },
-                { text: t('common.delete'), style: 'destructive', onPress: () => { haptic.warning(); clearDone(); } },
+                { text: t('common.delete'), style: 'destructive', onPress: () => clearDone() },
               ])
             }
           />
@@ -149,7 +147,6 @@ function IdeasPane({ inputRef }: { inputRef: RefObject<TextInput | null> }) {
 
   const save = () => {
     if (!draft.trim()) return;
-    haptic.soft();
     addIdea(draft);
     setDraft('');
   };
@@ -189,7 +186,6 @@ function IdeaCard({ idea, index }: { idea: Idea; index: number }) {
   const addTask = useStore((s) => s.addTask);
 
   const menu = () => {
-    haptic.soft();
     showDialog(t('lists.idea'), idea.text.slice(0, 80), [
       { text: idea.pinned ? t('lists.unpin') : t('lists.pin'), onPress: () => togglePin(idea.id) },
       {
@@ -197,7 +193,6 @@ function IdeaCard({ idea, index }: { idea: Idea; index: number }) {
         onPress: () => {
           addTask({ title: idea.text.split('\n')[0].slice(0, 120) });
           del(idea.id);
-          haptic.success();
         },
       },
       { text: t('common.delete'), style: 'destructive', onPress: () => del(idea.id) },
@@ -270,8 +265,6 @@ function GoalCard({ goal, index }: { goal: Goal; index: number }) {
 
   const step = (d: number) => {
     const next = Math.max(0, Math.min(100, goal.progress + d));
-    if (next === 100 && goal.progress < 100) haptic.success();
-    else haptic.tap();
     update(goal.id, { progress: next });
   };
 

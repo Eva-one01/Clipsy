@@ -3,7 +3,6 @@ import { Linking, Modal, Platform, Pressable, StyleSheet, View } from 'react-nat
 import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
 import { useT } from '@/i18n/useT';
 import { copyText } from '@/lib/clipboard';
-import { haptic } from '@/lib/haptics';
 import { useTheme } from '@/theme/ThemeProvider';
 import { motion, radius, space } from '@/theme/tokens';
 import { PressableScale } from './PressableScale';
@@ -34,7 +33,6 @@ export function ContactSheet({ visible, email, onClose }: { visible: boolean; em
   const copy = async () => {
     const ok = await copyText(email);
     if (!ok) return;
-    haptic.success();
     setCopied(true);
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setCopied(false), 2200);

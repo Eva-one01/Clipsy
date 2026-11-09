@@ -8,7 +8,6 @@ import { Text } from '@/components/Text';
 import { Card, Divider, Icon } from '@/components/ui';
 import { cities, cityName } from '@/constants/cities';
 import { useT } from '@/i18n/useT';
-import { haptic } from '@/lib/haptics';
 import { formatOffset, isValidTz, offsetFromLocal, zoned } from '@/lib/timezone';
 import { useStore } from '@/store';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -44,7 +43,6 @@ export default function ClockPicker() {
   }, [q, lang]);
 
   const pick = (o: Option) => {
-    haptic.success();
     addClock({ tz: o.tz, city: o.name, cityId: o.cityId });
     router.back();
   };

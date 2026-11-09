@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, type TextInput } from 'react-native';
+import { KeyboardAvoidingView, ScrollView, StyleSheet, View, type TextInput } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { desktop, type LicenseError } from '@/desktop/bridge';
 import { useDesktopState } from '@/desktop/licensing';
@@ -75,7 +75,7 @@ export function ActivationScreen() {
 
   return (
     <Animated.View entering={FadeIn.duration(motion.base)} style={[StyleSheet.absoluteFill, { backgroundColor: c.bg, zIndex: 500 }]}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <Animated.View entering={FadeInDown.delay(80).springify().damping(20)} style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>

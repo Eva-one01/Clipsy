@@ -13,7 +13,6 @@ import { clockLabel } from '@/constants/cities';
 import type { TKey } from '@/i18n';
 import { useT } from '@/i18n/useT';
 import { diffDays, eventsOn, formatClock, formatLongDate, formatTime, greeting, splitTime, timeToMinutes, todayKey } from '@/lib/date';
-import { haptic } from '@/lib/haptics';
 import { openPalette } from '@/lib/palette';
 import { parseQuick } from '@/lib/quickParse';
 import { dayRelation, dayRelationLabel, formatOffset, offsetFromLocal, zoned } from '@/lib/timezone';
@@ -118,7 +117,6 @@ export default function Today() {
         {quick.map((q, i) => (
           <Animated.View key={q.label} entering={FadeInDown.delay(60 + i * 40).duration(motion.base)} style={{ flex: 1 }}>
             <PressableScale
-              hapticOnPress
               onPress={() => router.push(q.href as never)}
               accessibilityLabel={t('today.q.a11y', { x: t(q.label) })}
               style={{ backgroundColor: c.surface, borderRadius: radius.md, borderWidth: 1, borderColor: c.border, paddingVertical: space.md, alignItems: 'center', gap: 6 }}
@@ -172,7 +170,6 @@ export default function Today() {
         submitBehavior="submit"
         onSubmitEditing={() => {
           if (!draft.trim()) return;
-          haptic.soft();
           // «llamar a Ana el viernes !!» → tarea para el viernes con prioridad alta.
           const p = parseQuick(draft);
           addTask({ title: p.kind === 'task' && p.title ? p.title : draft, due: p.kind === 'task' && p.date ? p.date : key, priority: p.priority });

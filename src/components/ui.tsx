@@ -2,7 +2,6 @@ import Feather from '@expo/vector-icons/Feather';
 import { useEffect, type ComponentProps, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { FadeIn, interpolateColor, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import { haptic } from '@/lib/haptics';
 import { useTheme } from '@/theme/ThemeProvider';
 import { motion, radius, space } from '@/theme/tokens';
 import { PressableScale } from './PressableScale';
@@ -51,7 +50,6 @@ export function IconButton({
   return (
     <PressableScale
       onPress={onPress}
-      hapticOnPress
       accessibilityLabel={label}
       scaleTo={0.9}
       style={{ width: size, height: size, borderRadius: radius.pill, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}
@@ -87,7 +85,6 @@ export function Button({
     <PressableScale
       onPress={onPress}
       disabled={disabled}
-      hapticOnPress
       accessibilityLabel={title}
       style={{
         height: 50,
@@ -116,7 +113,6 @@ export function Chip({ label, selected, onPress, color, icon }: { label: string;
   return (
     <PressableScale
       onPress={onPress}
-      hapticOnPress
       accessibilityState={{ selected }}
       accessibilityLabel={label}
       style={{
@@ -283,7 +279,6 @@ export function Toggle({ value, onChange, label }: { value: boolean; onChange: (
       accessibilityState={{ checked: value }}
       hitSlop={8}
       onPress={() => {
-        haptic.tap();
         onChange(!value);
       }}
     >

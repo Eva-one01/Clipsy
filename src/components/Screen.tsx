@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View, type ScrollViewProps } from 'react-native';
+import { KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, View, type ScrollViewProps } from 'react-native';
 import Animated, { Extrapolation, interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CONTENT_MAX_WIDTH, useIsDesktop } from '@/desktop/layout';
@@ -33,7 +33,7 @@ interface ScreenProps {
 
 /**
  * Contenedor estándar: título grande que se desvanece hacia una barra compacta
- * al desplazarse (patrón iOS), con márgenes y espacio para la barra de pestañas.
+ * al desplazarse, con márgenes y espacio para la barra de pestañas.
  */
 export function Screen({ title, subtitle, actions, children, tabbed, header, scroll = true, leading, clocks = true, onTitlePress, titleOpen, titleHint }: ScreenProps) {
   const { c } = useTheme();
@@ -106,7 +106,7 @@ export function Screen({ title, subtitle, actions, children, tabbed, header, scr
   );
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: c.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: c.bg }}>
       {/* Barra compacta que aparece al hacer scroll */}
       {title && !header ? (
         <Animated.View

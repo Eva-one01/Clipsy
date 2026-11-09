@@ -143,7 +143,6 @@ function initialData(): Data {
       accent: 'blue',
       currency: defaultCurrency(),
       weekStartsMonday: true,
-      haptics: true,
       monthlyBudget: 0,
       onboarded: false,
       use24h: true,

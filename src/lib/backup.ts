@@ -1,28 +1,20 @@
-import { File, Paths } from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
-import { t } from '@/i18n';
+/**
+ * Copias de seguridad en escritorio/web: descarga un .json (Electron muestra el diálogo
+ * "Guardar como" del sistema) e importa con el selector de archivos nativo.
+ * El formato es idéntico al del móvil, así que una copia del teléfono se puede restaurar
+ * en el ordenador y al revés.
+ */
 import { useStore, type RazorData } from '@/store';
-import { parseBackup, type PickResult } from './backupFormat';
 import { todayKey } from './date';
-
-const APP = 'Clipsy';
-const FORMAT_VERSION = 3;
-
-interface BackupFile {
-  app: typeof APP;
-  version: number;
-  exportedAt: string;
-  data: Partial<RazorData>;
-}
+import { parseBackup, type PickResult } from './backupFormat';
 
 export type { PickResult };
 
-/** Guarda todos los datos en un archivo .json y abre el menú del sistema para guardarlo o enviarlo. */
 export async function exportBackup(): Promise<void> {
   const s = useStore.getState();
-  const payload: BackupFile = {
-    app: APP,
-    version: FORMAT_VERSION,
+  const payload = {
+    app: 'Clipsy',
+    version: 3,
     exportedAt: new Date().toISOString(),
     data: {
       events: s.events,
@@ -34,36 +26,68 @@ export async function exportBackup(): Promise<void> {
       clocks: s.clocks,
       transactions: s.transactions,
       settings: s.settings,
-    },
+    } satisfies Partial<RazorData>,
   };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `clipsy-backup-${todayKey()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
 
-  const file = new File(Paths.cache, `clipsy-backup-${todayKey()}.json`);
-  if (file.exists) file.delete();
-  file.create();
-  file.write(JSON.stringify(payload, null, 2));
-
-  if (!(await Sharing.isAvailableAsync())) throw new Error('sharing-unavailable');
-  await Sharing.shareAsync(file.uri, {
-    mimeType: 'application/json',
-    UTI: 'public.json',
-    dialogTitle: t('set.exportTitle'),
+export function pickBackup(): Promise<PickResult> {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.style.display = 'none';
+    let settled = false;
+    const done = (r: PickResult) => {
+      if (settled) return;
+      settled = true;
+      input.remove();
+      resolve(r);
+    };
+    input.addEventListener('cancel', () => done({ status: 'canceled' }));
+    input.addEventListener('change', async () => {
+      const file = input.files?.[0];
+      if (!file) return done({ status: 'canceled' });
+      try {
+        done(parseBackup(JSON.parse(await file.text())));
+      } catch {
+        done({ status: 'invalid' });
+      }
+    });
+    document.body.appendChild(input);
+    input.click();
   });
 }
 
-/** Abre el selector de archivos y valida que sea una copia de Razor. No modifica nada todavía. */
-export async function pickBackup(): Promise<PickResult> {
-  const picked = await File.pickFileAsync({ mimeTypes: ['application/json', 'text/plain', 'application/octet-stream'] });
-  if (picked.canceled || !picked.result) return { status: 'canceled' };
-  try {
-    return parseBackup(JSON.parse(await picked.result.text()));
-  } catch {
-    return { status: 'invalid' };
-  }
-}
-
 /** Abre el selector y devuelve el texto del archivo elegido (para importar .ics). */
-export async function pickTextFile(_accept: string, mimeTypes: string[]): Promise<string | null> {
-  const picked = await File.pickFileAsync({ mimeTypes });
-  if (picked.canceled || !picked.result) return null;
-  return picked.result.text();
+export function pickTextFile(accept: string, _mimeTypes: string[]): Promise<string | null> {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = accept;
+    input.style.display = 'none';
+    let settled = false;
+    const done = (r: string | null) => {
+      if (settled) return;
+      settled = true;
+      input.remove();
+      resolve(r);
+    };
+    input.addEventListener('cancel', () => done(null));
+    input.addEventListener('change', async () => {
+      const file = input.files?.[0];
+      if (!file) return done(null);
+      done(file.size > 20 * 1024 * 1024 ? null : await file.text().catch(() => null));
+    });
+    document.body.appendChild(input);
+    input.click();
+  });
 }

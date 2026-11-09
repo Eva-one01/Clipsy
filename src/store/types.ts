@@ -130,7 +130,6 @@ export interface Settings {
   accent: AccentId;
   currency: string;
   weekStartsMonday: boolean;
-  haptics: boolean;
   monthlyBudget: number;
   onboarded: boolean;
   use24h: boolean;

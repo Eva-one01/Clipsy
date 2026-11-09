@@ -10,7 +10,6 @@ import { clockLabel } from '@/constants/cities';
 import { useT } from '@/i18n/useT';
 import { formatTime, splitTime } from '@/lib/date';
 import { showDialog } from '@/lib/dialog';
-import { haptic } from '@/lib/haptics';
 import { dayRelation, dayRelationLabel, formatOffset, isNight, offsetFromLocal, zoned } from '@/lib/timezone';
 import { useNow } from '@/lib/useNow';
 import { useStore } from '@/store';
@@ -33,7 +32,6 @@ export default function Clocks() {
 
   // Opciones del reloj: principal (el grande de arriba) y si se muestra en la franja superior.
   const openOptions = (id: string, name: string, pinned: boolean) => {
-    haptic.tap();
     const isPrimary = id === effectivePrimary;
     showDialog(name, t('clocks.headerHint'), [
       ...(isPrimary ? [] : [{ text: t('clocks.makePrimary'), onPress: () => setSettings({ primaryClockId: id }) }]),
@@ -97,7 +95,6 @@ export default function Clocks() {
                         color={c.danger}
                         variant="filled"
                         onPress={() => {
-                          haptic.warning();
                           remove(cl.id);
                         }}
                       />

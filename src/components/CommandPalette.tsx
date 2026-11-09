@@ -7,7 +7,6 @@ import { desktop, modKey } from '@/desktop/bridge';
 import type { TKey } from '@/i18n';
 import { useT } from '@/i18n/useT';
 import { formatClock, relativeDay, toKey } from '@/lib/date';
-import { haptic } from '@/lib/haptics';
 import { formatMoney } from '@/lib/money';
 import { closePalette, openPalette, usePalette } from '@/lib/palette';
 import { describeQuick, KIND_ICON, runQuick } from '@/lib/quickAdd';
@@ -201,7 +200,6 @@ export function CommandPalette() {
         run: async () => {
           const ok = await runQuick(parsed);
           if (ok) {
-            haptic.success();
             closePalette();
           }
         },

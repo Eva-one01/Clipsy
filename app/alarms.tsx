@@ -3,7 +3,6 @@ import { useMemo } from 'react';
 import { View } from 'react-native';
 import Animated, { FadeInDown, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { Checkbox } from '@/components/Checkbox';
-import { ExactAlarmBanner } from '@/components/ExactAlarmBanner';
 import { PermissionBanner } from '@/components/PermissionBanner';
 import { PressableScale } from '@/components/PressableScale';
 import { Screen } from '@/components/Screen';
@@ -37,7 +36,6 @@ export default function Alarms() {
       }
     >
       <PermissionBanner />
-      <ExactAlarmBanner />
 
       <SectionHeader title={t('alarms.title')} action={t('common.add')} onAction={() => router.push('/form/alarm')} />
       {alarms.length === 0 ? (

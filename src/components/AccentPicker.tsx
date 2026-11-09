@@ -3,7 +3,6 @@ import { View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import type { TKey } from '@/i18n';
 import { useT } from '@/i18n/useT';
-import { haptic } from '@/lib/haptics';
 import { useStore } from '@/store';
 import { useTheme } from '@/theme/ThemeProvider';
 import { accentOrder, accents, motion, space, type AccentId } from '@/theme/tokens';
@@ -30,7 +29,6 @@ export function AccentPicker() {
             label={t(`accent.${id}` as TKey)}
             onPress={() => {
               if (id === current) return;
-              haptic.tap();
               setSettings({ accent: id });
             }}
           />

@@ -1,8 +1,8 @@
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect } from 'react';
-import { Platform, View } from 'react-native';
+import { useEffect } from 'react';
+import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ActivationScreen } from '@/components/ActivationScreen';
@@ -15,7 +15,6 @@ import { useCrossWindowSync } from '@/desktop/crossWindow';
 import { useAutoSync } from '@/desktop/sync';
 import { useDesktopStateSync, useLicenseGate } from '@/desktop/licensing';
 import { useDesktopIntegration } from '@/desktop/useDesktopIntegration';
-import { useExactAlarmWatcher } from '@/lib/exactAlarms';
 import { configureNotifications, useNotificationRouting } from '@/lib/notifications';
 import { useStore } from '@/store';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
@@ -34,11 +33,6 @@ function RootStack() {
   useNotificationRouting(hydrated);
   useDesktopIntegration(hydrated);
   useCrossWindowSync(hydrated);
-
-  const reschedule = useCallback(() => {
-    useStore.getState().rescheduleAll().catch(() => undefined);
-  }, []);
-  useExactAlarmWatcher(reschedule, hydrated);
 
   useEffect(() => {
     configureNotifications().catch(() => undefined);
@@ -59,16 +53,8 @@ function RootStack() {
 
   if (!hydrated) return null;
 
-  // Formularios: hoja modal en iOS, deslizante en Android y ventana flotante en escritorio
-  // (FormScreen dibuja el fondo atenuado y la animación en la web).
-  const modal =
-    Platform.OS === 'web'
-      ? { presentation: 'transparentModal' as const, animation: 'none' as const, contentStyle: { backgroundColor: 'transparent' } }
-      : {
-          presentation: Platform.OS === 'ios' ? ('modal' as const) : ('card' as const),
-          animation: Platform.OS === 'ios' ? ('default' as const) : ('slide_from_bottom' as const),
-          gestureEnabled: true,
-        };
+  // Formularios: ventana flotante (FormScreen dibuja el fondo atenuado y la animación).
+  const modal = { presentation: 'transparentModal' as const, animation: 'none' as const, contentStyle: { backgroundColor: 'transparent' } };
 
   return (
     <>
@@ -80,7 +66,7 @@ function RootStack() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: c.bg },
-          animation: Platform.OS === 'android' ? 'fade_from_bottom' : 'default',
+          animation: 'default',
         }}
       >
         <Stack.Screen name="(tabs)" />

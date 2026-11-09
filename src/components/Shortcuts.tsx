@@ -4,7 +4,6 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { accelKeys, desktop, getShortcuts, modKey, setShortcutList, subscribeShortcuts, type ShortcutInfo } from '@/desktop/bridge';
 import type { TKey } from '@/i18n';
 import { useT } from '@/i18n/useT';
-import { haptic } from '@/lib/haptics';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
 import { Text } from './Text';
@@ -89,10 +88,8 @@ export function ShortcutsCard() {
     setRecording(null);
     setLive([]);
     if (res.ok) {
-      haptic.success();
       setMsg({ action, text: accel ? t('sc.saved') : t('sc.removed'), ok: true });
     } else {
-      haptic.warning();
       desktop?.shortcuts?.pause(false);
       setMsg({ action, text: res.error === 'duplicate' && res.with ? t('sc.duplicate', { name: label(res.with) }) : t(`sc.err.${res.error}` as TKey) });
     }
@@ -132,7 +129,6 @@ export function ShortcutsCard() {
   useEffect(() => () => desktop?.shortcuts?.pause(false), []);
 
   const start = (action: string) => {
-    haptic.tap();
     setMsg(null);
     setLive([]);
     setRecording(action);
@@ -140,7 +136,6 @@ export function ShortcutsCard() {
   };
 
   const reset = async () => {
-    haptic.tap();
     const next = await desktop!.shortcuts!.reset();
     setShortcutList(next);
     setMsg(null);

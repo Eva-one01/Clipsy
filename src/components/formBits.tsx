@@ -2,7 +2,6 @@ import { router } from 'expo-router';
 import { View } from 'react-native';
 import { t } from '@/i18n';
 import { showDialog } from '@/lib/dialog';
-import { haptic } from '@/lib/haptics';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space, tagColors } from '@/theme/tokens';
 import { PressableScale } from './PressableScale';
@@ -19,7 +18,6 @@ export function ColorPicker({ value, onChange }: { value: string; onChange: (c: 
           <PressableScale
             key={col}
             onPress={() => {
-              haptic.tap();
               onChange(col);
             }}
             accessibilityRole="radio"
@@ -54,7 +52,6 @@ export function DeleteButton({ label, confirm, onDelete }: { label: string; conf
         icon="trash-2"
         full
         onPress={() => {
-          haptic.warning();
           showDialog(label, confirm, [
             { text: t('common.cancel'), style: 'cancel' },
             {

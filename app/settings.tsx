@@ -1,9 +1,8 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Platform, View } from 'react-native';
+import { View } from 'react-native';
 import { AccentPicker } from '@/components/AccentPicker';
 import { Input } from '@/components/Input';
-import { ExactAlarmBanner } from '@/components/ExactAlarmBanner';
 import { PermissionBanner } from '@/components/PermissionBanner';
 import { Screen } from '@/components/Screen';
 import { Segmented } from '@/components/Segmented';
@@ -19,13 +18,11 @@ import { exportBackup, pickBackup, pickTextFile } from '@/lib/backup';
 import { parseIcs } from '@/lib/ics';
 import { formatDateTime, formatLongDate } from '@/lib/date';
 import { showDialog } from '@/lib/dialog';
-import { haptic } from '@/lib/haptics';
 import { currencies, formatMoney, parseAmount } from '@/lib/money';
 import { useStore } from '@/store';
 import type { ThemePref } from '@/store/types';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space, tagColors } from '@/theme/tokens';
-import { dk } from '@/desktop/licensing';
 
 export default function SettingsScreen() {
   const { c } = useTheme();
@@ -49,12 +46,10 @@ export default function SettingsScreen() {
     const res = await pickBackup().catch(() => ({ status: 'invalid' as const }));
     if (res.status === 'canceled') return;
     if (res.status === 'invalid') {
-      haptic.warning();
       showDialog(t('set.import'), t('backup.invalid'));
       return;
     }
     const date = res.exportedAt ? formatLongDate(res.exportedAt) : '—';
-    haptic.warning();
     showDialog(t('backup.confirmTitle'), t('backup.confirmBody', { date, n: res.count }), [
       { text: t('common.cancel'), style: 'cancel' },
       {
@@ -63,7 +58,6 @@ export default function SettingsScreen() {
         onPress: async () => {
           await importData(res.data);
           setBudgetText(useStore.getState().settings.monthlyBudget ? String(useStore.getState().settings.monthlyBudget) : '');
-          haptic.success();
           showDialog(t('backup.restored'));
         },
       },
@@ -75,7 +69,6 @@ export default function SettingsScreen() {
     if (text === null) return;
     const res = text.includes('BEGIN:VCALENDAR') ? parseIcs(text, tagColors[1] ?? tagColors[0]) : null;
     if (!res || res.events.length === 0) {
-      haptic.warning();
       showDialog(t('ics.title'), res ? t('ics.empty') : t('ics.invalid'));
       return;
     }
@@ -85,7 +78,6 @@ export default function SettingsScreen() {
         text: t('ics.confirm'),
         onPress: () => {
           const n = useStore.getState().importEvents(res.events);
-          haptic.success();
           showDialog(t('ics.done', { n }), n < res.events.length ? t('ics.dupes', { n: res.events.length - n }) : undefined);
         },
       },
@@ -93,7 +85,6 @@ export default function SettingsScreen() {
   };
 
   const confirmReset = () => {
-    haptic.warning();
     showDialog(t('set.reset'), t('set.resetBody'), [
       { text: t('common.cancel'), style: 'cancel' },
       {
@@ -111,7 +102,6 @@ export default function SettingsScreen() {
   return (
     <Screen title={t('set.title')} leading={<IconButton icon="chevron-left" label={t('common.back')} onPress={() => router.back()} />}>
       <PermissionBanner />
-      <ExactAlarmBanner />
 
       <SectionHeader title={t('set.language')} />
       <Card padded={false}>
@@ -124,7 +114,6 @@ export default function SettingsScreen() {
                 title={l.native}
                 onPress={() => {
                   if (sel) return;
-                  haptic.tap();
                   setSettings({ language: l.code });
                 }}
                 right={sel ? <Icon name="check" size={18} color={c.accent} /> : <View style={{ width: 18 }} />}
@@ -160,12 +149,6 @@ export default function SettingsScreen() {
           title={t('set.monday')}
           right={<Toggle value={settings.weekStartsMonday} onChange={(v) => setSettings({ weekStartsMonday: v })} label={t('set.monday')} />}
         />
-        {Platform.OS !== 'web' && (
-          <>
-            <Divider inset={58} />
-            <ListRow icon="smartphone" title={t('set.haptics')} right={<Toggle value={settings.haptics} onChange={(v) => setSettings({ haptics: v })} label={t('set.haptics')} />} />
-          </>
-        )}
       </Card>
 
       {desktop && <DesktopSection />}
@@ -219,7 +202,7 @@ export default function SettingsScreen() {
         <ListRow icon="trash-2" title={t('set.reset')} danger onPress={confirmReset} chevron={false} />
       </Card>
       <Text variant="caption" tone="faint" style={{ marginTop: space.md }}>
-        {t(dk('set.footer'))}
+        {t('set.footer')}
       </Text>
     </Screen>
   );

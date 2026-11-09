@@ -11,12 +11,11 @@ import { intlLocale, type TKey } from '@/i18n';
 import { useT } from '@/i18n/useT';
 import { useTheme } from '@/theme/ThemeProvider';
 import { motion, radius, space } from '@/theme/tokens';
-import { dk } from '@/desktop/licensing';
 
 /** Fecha de la versión vigente de estos textos. Actualízala si cambian. */
 const UPDATED = new Date(2026, 9, 26);
 
-const privacy = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7'] as const;
+const privacy = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'] as const;
 const terms = ['t1', 't2', 't3', 't4'] as const;
 
 export default function Legal() {
@@ -31,7 +30,7 @@ export default function Legal() {
         {t(`legal.${id}.h` as TKey)}
       </Text>
       <Text variant="body" tone="muted" style={{ lineHeight: 22 }}>
-        {t(dk(`legal.${id}.b` as TKey))}
+        {t(`legal.${id}.b` as TKey)}
       </Text>
     </Animated.View>
   );
@@ -44,7 +43,7 @@ export default function Legal() {
             <Icon name="shield" size={18} color={c.accent} />
           </View>
           <Text variant="body" style={{ flex: 1, lineHeight: 22 }}>
-            {t(dk('legal.summary'))}
+            {t('legal.summary')}
           </Text>
         </Card>
       </Animated.View>

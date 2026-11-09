@@ -1,4 +1,3 @@
-import type { TKey } from '@/i18n';
 import { useEffect } from 'react';
 import { create } from 'zustand';
 import { desktop, type LicenseState, type UpdateState } from './bridge';
@@ -37,8 +36,3 @@ export function useLicenseGate(): 'open' | 'loading' | 'gate' {
   return license.status === 'valid' ? 'open' : 'gate';
 }
 
-/** La app de escritorio con licencias se conecta para validar: algunos textos de privacidad cambian. */
-const DESK_KEYS = new Set(['onb.2.body', 'set.footer', 'legal.summary', 'legal.p1.b', 'legal.p3.b', 'legal.p5.b', 'help.a1']);
-export function dk(key: TKey): TKey {
-  return desktop?.license && DESK_KEYS.has(key) ? ((key + 'Desk') as TKey) : key;
-}

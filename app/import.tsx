@@ -11,7 +11,6 @@ import { desktop, type ImportFile } from '@/desktop/bridge';
 import type { TKey } from '@/i18n';
 import { useT } from '@/i18n/useT';
 import { relativeDay, weekdayName } from '@/lib/date';
-import { haptic } from '@/lib/haptics';
 import { interpret, type ImportGoal, type ImportItem } from '@/lib/importParse';
 import { runImport } from '@/lib/importRun';
 import { formatMoney } from '@/lib/money';
@@ -71,13 +70,11 @@ export default function Import() {
     setBusy(true);
     const n = await runImport(chosen);
     setBusy(false);
-    haptic.success();
     setAdded(n);
     setStep('done');
   };
 
   const toggle = (k: string) => {
-    haptic.tap();
     setOff((s) => {
       const next = new Set(s);
       if (next.has(k)) next.delete(k);
@@ -129,7 +126,6 @@ export default function Import() {
                 <PressableScale
                   key={g.key}
                   onPress={() => {
-                    haptic.tap();
                     setGoal(g.key);
                     setError(null);
                   }}
@@ -180,7 +176,6 @@ export default function Import() {
                 <PressableScale
                   onPress={choose}
                   disabled={!goal}
-                  hapticOnPress
                   accessibilityRole="button"
                   accessibilityLabel={goal ? t('import.choose') : t('import.pickFirst')}
                   style={[styles.white, { borderColor: isDark ? 'transparent' : c.borderStrong, opacity: goal ? 1 : 0.5 }]}

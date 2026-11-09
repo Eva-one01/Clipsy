@@ -21,7 +21,6 @@ import {
 } from '@/lib/date';
 import { useIsDesktop } from '@/desktop/layout';
 import { useT } from '@/i18n/useT';
-import { haptic } from '@/lib/haptics';
 import { useNow } from '@/lib/useNow';
 import { useStore } from '@/store';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -60,19 +59,16 @@ export default function CalendarScreen() {
   const dayTasks = useMemo(() => tasks.filter((x) => x.due === selected), [tasks, selected]);
 
   const shift = (n: 1 | -1) => {
-    haptic.tap();
     setDir(n);
     setMonth((m) => addMonths(m, n));
   };
 
   const togglePicker = () => {
-    haptic.tap();
     setPickYear(month.getFullYear());
     setPicker((v) => !v);
   };
 
   const pickMonth = (m: number) => {
-    haptic.soft();
     const d = new Date(pickYear, m, 1);
     setDir(d < month ? -1 : 1);
     setMonth(d);
@@ -80,7 +76,6 @@ export default function CalendarScreen() {
   };
 
   const goToday = () => {
-    haptic.soft();
     const d = new Date();
     setDir(d < month ? -1 : 1);
     setMonth(new Date(d.getFullYear(), d.getMonth(), 1));
@@ -169,7 +164,6 @@ export default function CalendarScreen() {
                 <Pressable
                   key={k}
                   onPress={() => {
-                    haptic.tap();
                     setSelected(k);
                     if (!inMonth) {
                       setDir(d < month ? -1 : 1);

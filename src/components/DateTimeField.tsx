@@ -1,13 +1,7 @@
-import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useState } from 'react';
-import { Platform, View } from 'react-native';
-import { intlLocale } from '@/i18n';
-import { useT } from '@/i18n/useT';
-import { formatClock, formatShortDate } from '@/lib/date';
+import { dateToTime, toKey } from '@/lib/date';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, space } from '@/theme/tokens';
-import { PressableScale } from './PressableScale';
-import { Text } from './Text';
+import { radius, space, type as typeScale } from '@/theme/tokens';
 
 interface Props {
   mode: 'date' | 'time';
@@ -16,57 +10,60 @@ interface Props {
   label: string;
   use24h?: boolean;
   minimumDate?: Date;
-  /** Solo escritorio: versión grande (ver DateTimeField.web.tsx). */
+  /** Versión grande (hora de la alarma). */
   large?: boolean;
 }
 
 /**
- * iOS: selector compacto nativo (se integra con el sistema).
- * Android: botón con el valor que abre el diálogo nativo de Material.
+ * Escritorio/web: campos nativos del navegador (<input type="date|time">), que en Electron
+ * abren el selector del sistema y se pueden escribir con el teclado.
  */
-export function DateTimeField({ mode, value, onChange, label, use24h = true, minimumDate }: Props) {
+export function DateTimeField({ mode, value, onChange, label, minimumDate, large }: Props) {
   const { c, isDark } = useTheme();
-  useT();
-  const [open, setOpen] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const str = mode === 'date' ? toKey(value) : dateToTime(value);
 
-  const handle = (e: DateTimePickerEvent, d?: Date) => {
-    if (Platform.OS === 'android') setOpen(false);
-    if (e.type === 'set' && d) onChange(d);
+  const handle = (raw: string) => {
+    if (!raw) return;
+    const d = new Date(value);
+    if (mode === 'date') {
+      const [y, m, day] = raw.split('-').map(Number);
+      d.setFullYear(y, m - 1, day);
+    } else {
+      const [h, min] = raw.split(':').map(Number);
+      d.setHours(h, min, 0, 0);
+    }
+    onChange(d);
   };
 
-  if (Platform.OS === 'ios') {
-    return (
-      <DateTimePicker
-        value={value}
-        mode={mode}
-        display="compact"
-        onChange={handle}
-        accentColor={c.accent}
-        themeVariant={isDark ? 'dark' : 'light'}
-        locale={intlLocale()}
-        minimumDate={minimumDate}
-        accessibilityLabel={label}
-      />
-    );
-  }
-
-  const text =
-    mode === 'date'
-      ? formatShortDate(value)
-      : formatClock(value, use24h);
+  const t = large ? typeScale.numeric : typeScale.body;
 
   return (
-    <View>
-      <PressableScale
-        onPress={() => setOpen(true)}
-        accessibilityLabel={`${label}: ${text}`}
-        style={{ backgroundColor: c.surfaceAlt, borderRadius: radius.sm, paddingHorizontal: space.md, paddingVertical: space.sm }}
-      >
-        <Text variant="body" tabular>
-          {text}
-        </Text>
-      </PressableScale>
-      {open && <DateTimePicker value={value} mode={mode} is24Hour={use24h} onChange={handle} minimumDate={minimumDate} />}
-    </View>
+    <input
+      type={mode}
+      aria-label={label}
+      value={str}
+      min={mode === 'date' && minimumDate ? toKey(minimumDate) : undefined}
+      onChange={(e) => handle(e.currentTarget.value)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      style={{
+        colorScheme: isDark ? 'dark' : 'light',
+        fontFamily: 'inherit',
+        fontSize: large ? 64 : t.fontSize,
+        fontWeight: large ? 300 : 500,
+        letterSpacing: large ? -2 : 0,
+        fontVariantNumeric: 'tabular-nums',
+        color: c.text,
+        background: large ? 'transparent' : c.surfaceAlt,
+        border: `1px solid ${focused ? c.accent : 'transparent'}`,
+        borderRadius: radius.sm,
+        padding: large ? `${space.xs}px ${space.md}px` : `${space.xs + 2}px ${space.md}px`,
+        outline: 'none',
+        cursor: 'pointer',
+        textAlign: 'center',
+        accentColor: c.accent,
+      }}
+    />
   );
 }

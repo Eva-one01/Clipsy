@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Pressable, View, type LayoutChangeEvent } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import { haptic } from '@/lib/haptics';
 import { useTheme } from '@/theme/ThemeProvider';
 import { motion, radius } from '@/theme/tokens';
 import { Text } from './Text';
@@ -64,7 +63,6 @@ export function Segmented<T extends string>({
             accessibilityLabel={o.label}
             onPress={() => {
               if (!selected) {
-                haptic.tap();
                 onChange(o.value);
               }
             }}

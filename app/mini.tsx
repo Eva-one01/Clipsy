@@ -9,7 +9,6 @@ import { Icon, IconButton, SectionHeader } from '@/components/ui';
 import { desktop } from '@/desktop/bridge';
 import { useT } from '@/i18n/useT';
 import { diffDays, eventsOn, formatClock, formatLongDate, todayKey } from '@/lib/date';
-import { haptic } from '@/lib/haptics';
 import { describeQuick, KIND_ICON, runQuick } from '@/lib/quickAdd';
 import { parseQuick } from '@/lib/quickParse';
 import { useNow } from '@/lib/useNow';
@@ -59,7 +58,6 @@ export default function Mini() {
     // Sin fecha, lo escrito aquí es para hoy.
     const p = parsed.kind === 'task' && !parsed.date ? { ...parsed, date: key } : parsed;
     if (await runQuick(p)) {
-      haptic.soft();
       setDraft('');
     }
   };

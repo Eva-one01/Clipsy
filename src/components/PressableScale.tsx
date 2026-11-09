@@ -1,6 +1,5 @@
 import { Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
-import { haptic } from '@/lib/haptics';
 import { motion } from '@/theme/tokens';
 
 const APressable = Animated.createAnimatedComponent(Pressable);
@@ -8,14 +7,12 @@ const APressable = Animated.createAnimatedComponent(Pressable);
 export interface PressableScaleProps extends Omit<PressableProps, 'style'> {
   style?: StyleProp<ViewStyle>;
   scaleTo?: number;
-  hapticOnPress?: boolean;
 }
 
 /** Botón base: compresión sutil con muelle + leve atenuación. */
 export function PressableScale({
   style,
   scaleTo = 0.97,
-  hapticOnPress = false,
   onPressIn,
   onPressOut,
   onPress,
@@ -45,7 +42,6 @@ export function PressableScale({
         onPressOut?.(e);
       }}
       onPress={(e) => {
-        if (hapticOnPress) haptic.tap();
         onPress?.(e);
       }}
       style={[style, aStyle]}

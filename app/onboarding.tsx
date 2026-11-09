@@ -21,12 +21,10 @@ import { Text } from '@/components/Text';
 import { Button, Icon, type IconName } from '@/components/ui';
 import { languages, type TKey } from '@/i18n';
 import { useT } from '@/i18n/useT';
-import { haptic } from '@/lib/haptics';
 import { useStore } from '@/store';
 import type { ThemePref } from '@/store/types';
 import { useTheme } from '@/theme/ThemeProvider';
 import { motion, radius, space } from '@/theme/tokens';
-import { dk } from '@/desktop/licensing';
 
 type Step = { id: 'lang' | 'intro' | 'lifetime' | 'privacy' | 'theme'; icon: IconName; title: TKey; body: TKey };
 
@@ -58,7 +56,6 @@ export default function Onboarding() {
   // Cierre: el contenido se retira y el logotipo aparece centrado antes de entrar a la app.
   const finish = () => {
     if (leaving) return;
-    haptic.success();
     setLeaving(true);
     timer.current = setTimeout(() => {
       setSettings({ onboarded: true });
@@ -68,7 +65,6 @@ export default function Onboarding() {
 
   const go = (to: number) => {
     if (leaving || to < 0 || to >= steps.length) return;
-    haptic.soft();
     setDir(to > i ? 1 : -1);
     setI(to);
   };
@@ -119,7 +115,7 @@ export default function Onboarding() {
           </Animated.View>
           <Animated.View entering={enter(2)}>
             <Text variant="body" tone="muted" style={{ fontSize: 17, lineHeight: 25 }}>
-              {t(dk(step.body))}
+              {t(step.body)}
             </Text>
           </Animated.View>
 
@@ -135,7 +131,6 @@ export default function Onboarding() {
                     accessibilityState={{ selected: sel }}
                     accessibilityLabel={l.native}
                     onPress={() => {
-                      haptic.tap();
                       setSettings({ language: l.code });
                     }}
                     style={[styles.langRow, { borderTopWidth: k ? StyleSheet.hairlineWidth : 0, borderTopColor: c.border }]}

@@ -11,7 +11,6 @@ import { Card, Divider, EmptyState, Icon, IconButton, ProgressBar, SectionHeader
 import { categoryLabel, expenseCategories, findCategory } from '@/constants/finance';
 import { useT } from '@/i18n/useT';
 import { addMonths, formatMonthTitle, fromKey, relativeDay } from '@/lib/date';
-import { haptic } from '@/lib/haptics';
 import { formatMoney } from '@/lib/money';
 import { nextCharges } from '@/lib/recurrence';
 import { useStore } from '@/store';
@@ -103,7 +102,6 @@ export default function Finance() {
   const budgetColor = budgetRatio >= 1 ? c.danger : budgetRatio >= 0.8 ? c.warning : c.accent;
 
   const shift = (n: number) => {
-    haptic.tap();
     setSelected(null);
     setMonth((m) => addMonths(m, n));
   };
@@ -210,7 +208,6 @@ export default function Finance() {
                       key={x.key}
                       scaleTo={0.985}
                       onPress={() => {
-                        haptic.tap();
                         setSelected(active ? null : x.key);
                       }}
                       accessibilityRole="button"
@@ -330,7 +327,6 @@ export default function Finance() {
           month={month}
           currency={currency}
           onSelect={(d) => {
-            haptic.tap();
             setSelected(null);
             setMonth(new Date(d.getFullYear(), d.getMonth(), 1));
           }}

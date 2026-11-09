@@ -1,7 +1,6 @@
 import Feather from '@expo/vector-icons/Feather';
 import { useEffect } from 'react';
 import Animated, { interpolateColor, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { haptic } from '@/lib/haptics';
 import { useTheme } from '@/theme/ThemeProvider';
 import { motion } from '@/theme/tokens';
 import { PressableScale } from './PressableScale';
@@ -29,7 +28,6 @@ export function Checkbox({ checked, onToggle, color, label, size = 24 }: { check
       accessibilityLabel={label}
       hitSlop={10}
       onPress={() => {
-        checked ? haptic.tap() : haptic.success();
         onToggle();
       }}
       scaleTo={0.88}

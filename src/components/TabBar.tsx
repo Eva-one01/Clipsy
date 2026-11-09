@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useT } from '@/i18n/useT';
-import { haptic } from '@/lib/haptics';
 import { useTheme } from '@/theme/ThemeProvider';
 import { motion, radius } from '@/theme/tokens';
 import { useIsDesktop } from '@/desktop/layout';
@@ -65,7 +64,6 @@ function BottomBar({ state, navigation }: TabBarProps) {
             onPress={() => {
               const ev = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
               if (!focused && !ev.defaultPrevented) {
-                haptic.tap();
                 navigation.navigate(route.name);
               }
             }}
@@ -98,12 +96,11 @@ const styles = StyleSheet.create({
     bottom: 0,
     flexDirection: 'row',
     borderTopWidth: StyleSheet.hairlineWidth,
-    ...Platform.select({ android: { elevation: 0 } }),
   },
   pillTrack: { position: 'absolute', top: TOP, left: 0, height: PILL_H, alignItems: 'center' },
   pill: { width: PILL_W, height: PILL_H, borderRadius: radius.pill },
   tab: { flex: 1, alignItems: 'center', paddingTop: TOP },
   iconBox: { width: PILL_W, height: PILL_H, alignItems: 'center', justifyContent: 'center' },
-  // Sin relleno de fuente de Android y con altura de línea fija, el glifo queda centrado de verdad.
+  // Con altura de línea fija, el glifo queda centrado de verdad.
   icon: { lineHeight: ICON, height: ICON, includeFontPadding: false, textAlignVertical: 'center' },
 });

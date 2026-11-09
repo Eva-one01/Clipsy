@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useIsDesktop } from '@/desktop/layout';
 import { useT } from '@/i18n/useT';
 import { useDialogStore } from '@/lib/dialog';
-import { haptic } from '@/lib/haptics';
 import { useTheme } from '@/theme/ThemeProvider';
 import { motion, radius, space } from '@/theme/tokens';
 import { PressableScale } from './PressableScale';
@@ -29,13 +28,12 @@ export function FormScreen({ title, onSave, canSave, saveLabel, children, footer
   const save = saveLabel ?? t('common.save');
   const insets = useSafeAreaInsets();
   const isDesktop = useIsDesktop();
-  const topPad = isDesktop ? space.md : Platform.OS === 'android' ? insets.top : space.sm;
+  const topPad = isDesktop ? space.md : space.sm;
 
   const saving = useRef(false);
   const submit = useCallback(async () => {
     if (!canSave || saving.current) return;
     saving.current = true;
-    haptic.success();
     try {
       await onSave();
       if (router.canGoBack()) router.back();
@@ -65,7 +63,7 @@ export function FormScreen({ title, onSave, canSave, saveLabel, children, footer
 
   const body = (
     <>
-      {Platform.OS === 'ios' && <View style={[styles.grabber, { backgroundColor: c.borderStrong }]} />}
+
       <View style={[styles.header, { paddingTop: topPad, borderBottomColor: c.border }]}>
         <PressableScale onPress={() => router.back()} accessibilityLabel={t('common.cancel')} style={styles.side}>
           <Text variant="body" tone="muted" numberOfLines={1}>
@@ -117,7 +115,7 @@ export function FormScreen({ title, onSave, canSave, saveLabel, children, footer
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: c.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: c.bg }}>
       {body}
     </KeyboardAvoidingView>
   );

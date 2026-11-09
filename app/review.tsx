@@ -8,7 +8,6 @@ import { Text } from '@/components/Text';
 import { Button, Card, Divider, Icon, IconButton, ProgressBar, SectionHeader } from '@/components/ui';
 import { useT } from '@/i18n/useT';
 import { addDays, diffDays, eventsOn, formatShortDate, fromKey, relativeDay, toKey, todayKey } from '@/lib/date';
-import { haptic } from '@/lib/haptics';
 import { formatMoney } from '@/lib/money';
 import { useStore } from '@/store';
 import type { Task } from '@/store/types';
@@ -58,7 +57,6 @@ export default function Review() {
   const newIdeas = ideas.filter((i) => i.createdAt >= weekAgo).length;
 
   const finish = () => {
-    haptic.success();
     setSettings({ lastReview: today });
     router.back();
   };
@@ -200,7 +198,6 @@ function PendingRow({ task }: { task: Task }) {
   const update = useStore((s) => s.updateTask);
   const toggle = useStore((s) => s.toggleTask);
   const move = (n: number) => {
-    haptic.tap();
     update(task.id, { due: toKey(addDays(new Date(), n)) });
   };
   const chip = (label: string, onPress: () => void) => (
@@ -223,7 +220,6 @@ function PendingRow({ task }: { task: Task }) {
         {chip(t('common.tomorrow'), () => move(1))}
         {chip(t('review.nextWeekShort'), () => move(7 - ((new Date().getDay() + 6) % 7)))}
         {chip(t('review.markDone'), () => {
-          haptic.success();
           toggle(task.id);
         })}
       </View>

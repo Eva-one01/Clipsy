@@ -1,7 +1,6 @@
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Platform, View } from 'react-native';
+import { View } from 'react-native';
 import { DateTimeField } from '@/components/DateTimeField';
 import { DeleteButton, FieldLabel } from '@/components/formBits';
 import { FormGroup, FormRow, FormScreen } from '@/components/FormScreen';
@@ -9,11 +8,8 @@ import { Input } from '@/components/Input';
 import { PressableScale } from '@/components/PressableScale';
 import { Text } from '@/components/Text';
 import { Chip, Toggle } from '@/components/ui';
-import { intlLocale } from '@/i18n';
 import { useT } from '@/i18n/useT';
-import { dateToTime, describeDays, formatTime, timeToDate, weekdayName } from '@/lib/date';
-import { haptic } from '@/lib/haptics';
-import { promptExactAlarmsIfNeeded } from '@/lib/exactAlarms';
+import { dateToTime, describeDays, timeToDate, weekdayName } from '@/lib/date';
 import { ensurePermission } from '@/lib/notifications';
 import { useStore } from '@/store';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -22,7 +18,7 @@ import { radius, space } from '@/theme/tokens';
 const dayOrder = [1, 2, 3, 4, 5, 6, 0];
 
 export default function AlarmForm() {
-  const { c, isDark } = useTheme();
+  const { c } = useTheme();
   const { t } = useT();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const existing = useStore((s) => (id ? s.alarms.find((a) => a.id === id) : undefined));
@@ -35,23 +31,19 @@ export default function AlarmForm() {
   const [label, setLabel] = useState(existing?.label ?? '');
   const [days, setDays] = useState<number[]>(existing?.days ?? [1, 2, 3, 4, 5]);
   const [enabled, setEnabled] = useState(existing?.enabled ?? true);
-  const [androidOpen, setAndroidOpen] = useState(false);
 
   const toggleDay = (d: number) => {
-    haptic.tap();
     setDays((cur) => (cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d]));
   };
 
   const save = async () => {
-    const allowed = await ensurePermission();
+    await ensurePermission();
     const payload = { time, label: label.trim(), days, enabled };
     if (existing) await update(existing.id, payload);
     else await add(payload);
-    if (allowed) promptExactAlarmsIfNeeded();
   };
 
   const preset = (p: number[]) => {
-    haptic.tap();
     setDays(p);
   };
   const same = (a: number[], b: number[]) => a.length === b.length && a.every((x) => b.includes(x));
@@ -63,45 +55,9 @@ export default function AlarmForm() {
       onSave={save}
       footer={existing ? <DeleteButton label={t('alarm.delete')} confirm={t('common.sure')} onDelete={() => del(existing.id)} /> : null}
     >
-      {Platform.OS === 'ios' ? (
-        <DateTimePicker
-          value={timeToDate(time)}
-          mode="time"
-          display="spinner"
-          onChange={(_, d) => d && setTime(dateToTime(d))}
-          themeVariant={isDark ? 'dark' : 'light'}
-          // La región decide 12/24 h en el selector de iOS (GB = 24 h, US = 12 h).
-          locale={`${intlLocale().split('-')[0]}_${use24h ? 'GB' : 'US'}`}
-          style={{ alignSelf: 'stretch', height: 200 }}
-          accessibilityLabel={t('alarm.timeA11y')}
-        />
-      ) : Platform.OS === 'web' ? (
-        <View style={{ alignItems: 'center', paddingVertical: space.md }}>
-          <DateTimeField mode="time" large label={t('alarm.timeA11y')} value={timeToDate(time)} onChange={(d) => setTime(dateToTime(d))} use24h={use24h} />
-        </View>
-      ) : (
-        <View style={{ alignItems: 'center' }}>
-          <PressableScale onPress={() => setAndroidOpen(true)} accessibilityLabel={`${t('alarm.timeA11y')}: ${formatTime(time, use24h)}. ${t('alarm.tapToChange')}`}>
-            <Text variant="numeric" tabular style={{ fontSize: 72, lineHeight: 80 }}>
-              {formatTime(time, use24h)}
-            </Text>
-          </PressableScale>
-          <Text variant="caption" tone="faint">
-            {t('alarm.tapToChange')}
-          </Text>
-          {androidOpen && (
-            <DateTimePicker
-              value={timeToDate(time)}
-              mode="time"
-              is24Hour={use24h}
-              onChange={(e, d) => {
-                setAndroidOpen(false);
-                if (e.type === 'set' && d) setTime(dateToTime(d));
-              }}
-            />
-          )}
-        </View>
-      )}
+      <View style={{ alignItems: 'center', paddingVertical: space.md }}>
+        <DateTimeField mode="time" large label={t('alarm.timeA11y')} value={timeToDate(time)} onChange={(d) => setTime(dateToTime(d))} use24h={use24h} />
+      </View>
 
       <View>
         <FieldLabel>{t('alarm.repeat', { d: describeDays(days) })}</FieldLabel>

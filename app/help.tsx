@@ -10,11 +10,9 @@ import { Text } from '@/components/Text';
 import { Button, Card, Divider, Icon, IconButton, ListRow, SectionHeader } from '@/components/ui';
 import type { TKey } from '@/i18n';
 import { useT } from '@/i18n/useT';
-import { haptic } from '@/lib/haptics';
 import { useStore } from '@/store';
 import { useTheme } from '@/theme/ThemeProvider';
 import { motion, space } from '@/theme/tokens';
-import { dk } from '@/desktop/licensing';
 
 const QUESTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
@@ -37,10 +35,9 @@ export default function Help() {
               {i > 0 && <Divider inset={space.lg} />}
               <Question
                 q={t(`help.q${n}` as TKey)}
-                a={t(dk(`help.a${n}` as TKey))}
+                a={t(`help.a${n}` as TKey)}
                 open={open === n}
                 onToggle={() => {
-                  haptic.tap();
                   setOpen(open === n ? null : n);
                 }}
               />
