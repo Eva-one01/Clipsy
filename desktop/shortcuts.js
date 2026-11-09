@@ -23,18 +23,25 @@ const GLOBAL = new Set(['quick', 'voice']);
 const VOICE_FALLBACK = 'CommandOrControl+Alt+D';
 
 const file = () => path.join(app.getPath('userData'), 'shortcuts.json');
-let custom = {};
-try {
-  custom = JSON.parse(fs.readFileSync(file(), 'utf8')) || {};
-} catch {
-  custom = {};
+// Se lee la primera vez que se usa, no al cargar el módulo: main.js cambia la carpeta de datos
+// (userData → «Razor») después de cargar este archivo, y leerlo antes apuntaría a otra carpeta.
+let loaded = null;
+function store() {
+  if (!loaded) {
+    try {
+      loaded = JSON.parse(fs.readFileSync(file(), 'utf8')) || {};
+    } catch {
+      loaded = {};
+    }
+  }
+  return loaded;
 }
 const failed = new Set(); // globales que otro programa ya tenía
 let effective = {}; // lo que quedó registrado de verdad (con el respaldo de voz)
 
 function get(action) {
   if (action in effective) return effective[action];
-  return action in custom ? custom[action] : DEFAULTS[action] || '';
+  return action in store() ? store()[action] : DEFAULTS[action] || '';
 }
 
 const KEY = /^(?:[A-Z0-9]|F(?:[1-9]|1[0-9]|2[0-4])|Space|Tab|Return|Backspace|Delete|Insert|Home|End|PageUp|PageDown|Up|Down|Left|Right|Plus|[,.\/;'\[\]\\`=-]|num[0-9]|numadd|numsub|nummult|numdiv|numdec)$/;
@@ -62,7 +69,7 @@ function registerGlobals(handlers, paused = false) {
     const fn = handlers[action];
     if (!fn) continue;
     const tries = [get(action)];
-    if (action === 'voice' && !('voice' in custom)) tries.push(VOICE_FALLBACK);
+    if (action === 'voice' && !('voice' in store())) tries.push(VOICE_FALLBACK);
     let ok = false;
     for (const acc of tries.filter(Boolean)) {
       try {
@@ -95,7 +102,7 @@ function list() {
 function save() {
   try {
     fs.mkdirSync(path.dirname(file()), { recursive: true });
-    fs.writeFileSync(file(), JSON.stringify(custom, null, 2));
+    fs.writeFileSync(file(), JSON.stringify(store(), null, 2));
   } catch (e) {
     console.error('shortcuts', e && e.message);
   }
@@ -114,13 +121,13 @@ function set(action, accel, apply) {
     const clash = Object.keys(DEFAULTS).find((a) => a !== action && get(a) === next);
     if (clash) return { ok: false, error: 'duplicate', with: clash };
   }
-  const before = action in custom ? custom[action] : undefined;
-  custom[action] = next;
+  const before = action in store() ? store()[action] : undefined;
+  store()[action] = next;
   apply();
   if (GLOBAL.has(action) && next && failed.has(action)) {
     // Otro programa la tiene: se deja como estaba.
-    if (before === undefined) delete custom[action];
-    else custom[action] = before;
+    if (before === undefined) delete store()[action];
+    else store()[action] = before;
     apply();
     return { ok: false, error: 'taken' };
   }
@@ -129,7 +136,7 @@ function set(action, accel, apply) {
 }
 
 function reset(apply) {
-  custom = {};
+  loaded = {};
   save();
   apply();
 }
