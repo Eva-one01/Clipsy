@@ -514,6 +514,7 @@ function registerIpc() {
   ipcMain.on('razor:error', (_e, p) => errors.report(p));
   ipcMain.handle('razor:errors:get', () => errors.get());
   ipcMain.handle('razor:errors:set', (_e, v) => errors.setEnabled(!!v));
+  ipcMain.handle('razor:errors:test', () => errors.test());
   ipcMain.on('razor:update:download', () => updater.openDownloads());
   // Abre páginas de la web de Clipsy (comprar, recuperar contraseña, gestionar equipos).
   ipcMain.on('razor:open-site', (_e, where) => {

@@ -766,6 +766,11 @@ const fr: Dict = {
   'err.section': 'Confidentialité',
   'err.title': 'Envoyer les rapports d’erreur',
   'err.sub': 'Anonymes : seulement ce qui a échoué et dans quelle version, jamais votre contenu. Ils nous aident à corriger les bugs.',
+  'err.test': 'Envoyer une erreur de test',
+  'err.testSub': 'Vérifie que les rapports arrivent sur Sentry.',
+  'err.testSending': 'Envoi…',
+  'err.testOk': 'Envoyée. Elle devrait apparaître dans Sentry d’ici une minute.',
+  'err.testFail': 'Échec de l’envoi. Vérifiez votre connexion.',
 };
 
 export default fr;

@@ -73,6 +73,17 @@ function report(p) {
   Sentry.captureException(e, { tags: { process: 'renderer', kind: p.kind || 'error' }, extra: { source: p.source || null } });
 }
 
+/** Botón «Enviar un error de prueba» de Ajustes: comprueba que los informes llegan al panel de Sentry. */
+async function test() {
+  if (!Sentry || !enabled) return { ok: false };
+  Sentry.captureException(new Error(`Clipsy ${app.getVersion()}: error de prueba enviado desde Ajustes`), { tags: { prueba: 'si' } });
+  try {
+    return { ok: await Sentry.flush(8000) };
+  } catch {
+    return { ok: false };
+  }
+}
+
 function get() {
   return { enabled, available: !!dsn() };
 }
@@ -85,4 +96,4 @@ function setEnabled(v) {
   return get();
 }
 
-module.exports = { init, report, get, setEnabled };
+module.exports = { init, report, test, get, setEnabled };

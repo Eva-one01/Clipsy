@@ -27,5 +27,5 @@ PEGA-AQUI-LA-CLAVE-PUBLICA
 
   // Informes de errores (Sentry → tu proyecto → Settings → Client Keys (DSN)). El DSN es público:
   // solo permite ENVIAR informes. Vacío = sin informes.
-  sentryDsn: '',
+  sentryDsn: 'https://2081f94d713c151a2708629a56efefb0@o4512404400308224.ingest.us.sentry.io/4512404428226560',
 };

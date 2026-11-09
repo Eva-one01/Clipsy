@@ -790,6 +790,11 @@ const es = {
   'err.section': 'Privacidad',
   'err.title': 'Enviar informes de errores',
   'err.sub': 'Anónimos: solo qué falló y en qué versión, nunca tu contenido. Nos ayudan a arreglar fallos.',
+  'err.test': 'Enviar un error de prueba',
+  'err.testSub': 'Comprueba que los informes llegan a Sentry.',
+  'err.testSending': 'Enviando…',
+  'err.testOk': 'Enviado. Debería aparecer en Sentry en un minuto.',
+  'err.testFail': 'No se pudo enviar. Revisa tu conexión.',
 };
 
 export default es;

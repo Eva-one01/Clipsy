@@ -449,6 +449,7 @@ function LicenseSection() {
 function ErrorReportsSection() {
   const { t } = useT();
   const [st, setSt] = useState<{ enabled: boolean; available: boolean } | null>(null);
+  const [testState, setTestState] = useState<'idle' | 'sending' | 'ok' | 'fail'>('idle');
   useEffect(() => {
     desktop?.errorReports?.get().then(setSt).catch(() => undefined);
   }, []);
@@ -463,6 +464,21 @@ function ErrorReportsSection() {
           subtitle={t('err.sub')}
           right={<Toggle value={st.enabled} onChange={(v) => desktop?.errorReports?.set(v).then(setSt)} label={t('err.title')} />}
         />
+        {st.enabled ? (
+          <>
+            <Divider inset={58} />
+            <ListRow
+              icon="send"
+              title={t('err.test')}
+              subtitle={testState === 'sending' ? t('err.testSending') : testState === 'ok' ? t('err.testOk') : testState === 'fail' ? t('err.testFail') : t('err.testSub')}
+              onPress={async () => {
+                setTestState('sending');
+                const r = await desktop?.errorReports?.test?.().catch(() => ({ ok: false }));
+                setTestState(r?.ok ? 'ok' : 'fail');
+              }}
+            />
+          </>
+        ) : null}
       </Card>
     </>
   );

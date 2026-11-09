@@ -173,6 +173,7 @@ export interface RazorDesktop {
     report(p: { kind?: string; name?: string; message: string; stack?: string; source?: string }): void;
     get(): Promise<{ enabled: boolean; available: boolean }>;
     set(v: boolean): Promise<{ enabled: boolean; available: boolean }>;
+    test?(): Promise<{ ok: boolean }>;
   };
   updates?: {
     get(): Promise<UpdateState>;

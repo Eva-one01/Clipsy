@@ -766,6 +766,11 @@ const de: Dict = {
   'err.section': 'Datenschutz',
   'err.title': 'Fehlerberichte senden',
   'err.sub': 'Anonym: nur was fehlschlug und in welcher Version, nie deine Inhalte. Sie helfen uns, Fehler zu beheben.',
+  'err.test': 'Testfehler senden',
+  'err.testSub': 'Prüft, ob Berichte bei Sentry ankommen.',
+  'err.testSending': 'Wird gesendet…',
+  'err.testOk': 'Gesendet. Er sollte in einer Minute in Sentry erscheinen.',
+  'err.testFail': 'Senden fehlgeschlagen. Prüfe deine Verbindung.',
 };
 
 export default de;

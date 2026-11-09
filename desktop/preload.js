@@ -100,6 +100,7 @@ contextBridge.exposeInMainWorld('razorDesktop', {
       } catch {}
     },
     get: () => ipcRenderer.invoke('razor:errors:get'),
+    test: () => ipcRenderer.invoke('razor:errors:test'),
     set: (v) => ipcRenderer.invoke('razor:errors:set', !!v),
   },
   updates: {

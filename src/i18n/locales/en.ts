@@ -766,6 +766,11 @@ const en: Dict = {
   'err.section': 'Privacy',
   'err.title': 'Send error reports',
   'err.sub': 'Anonymous: only what failed and in which version, never your content. They help us fix bugs.',
+  'err.test': 'Send a test error',
+  'err.testSub': 'Checks that reports reach Sentry.',
+  'err.testSending': 'Sending…',
+  'err.testOk': 'Sent. It should show up in Sentry within a minute.',
+  'err.testFail': 'Couldn’t send it. Check your connection.',
 };
 
 export default en;
