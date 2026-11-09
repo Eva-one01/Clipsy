@@ -3,19 +3,17 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { FadeIn, FadeInDown, SlideInLeft, SlideInRight } from 'react-native-reanimated';
-import { Checkbox } from '@/components/Checkbox';
 import { EventRow, TaskRow } from '@/components/rows';
 import { Screen } from '@/components/Screen';
+import { WeekGrid } from '@/components/WeekGrid';
 import { Segmented } from '@/components/Segmented';
 import { Text } from '@/components/Text';
-import { EmptyState, Icon, IconButton, SectionHeader } from '@/components/ui';
+import { EmptyState, IconButton, SectionHeader } from '@/components/ui';
 import {
   addDays,
   addMonths,
   eventsOn,
-  formatClock,
   formatShortDate,
-  formatTime,
   formatLongDate,
   formatMonthTitle,
   fromKey,
@@ -24,13 +22,11 @@ import {
   toKey,
   todayKey,
   weekdayLabels,
-  weekdayName,
 } from '@/lib/date';
 import { useIsDesktop } from '@/desktop/layout';
 import { useT } from '@/i18n/useT';
 import { useNow } from '@/lib/useNow';
 import { useStore } from '@/store';
-import type { CalendarEvent, Reminder, Task } from '@/store/types';
 import { useTheme } from '@/theme/ThemeProvider';
 import { motion, radius, space } from '@/theme/tokens';
 
@@ -41,7 +37,6 @@ export default function CalendarScreen() {
   const now = useNow();
   const events = useStore((s) => s.events);
   const tasks = useStore((s) => s.tasks);
-  const reminders = useStore((s) => s.reminders);
   const weekStartsMonday = useStore((s) => s.settings.weekStartsMonday);
   const view = useStore((s) => s.settings.calendarView ?? 'month');
   const setSettings = useStore((s) => s.setSettings);
@@ -188,11 +183,20 @@ export default function CalendarScreen() {
         ) : null}
       </View>
       {view === 'week' ? (
-        <GestureDetector gesture={swipe}>
-          <Animated.View key={weekKey} entering={(dir === 1 ? SlideInRight : SlideInLeft).duration(motion.base)}>
-            <WeekView days={weekDays} events={events} tasks={tasks} reminders={reminders} columns={isDesktop} today={today} now={now} />
-          </Animated.View>
-        </GestureDetector>
+        <Animated.View key={weekKey} entering={(dir === 1 ? SlideInRight : SlideInLeft).duration(motion.base)}>
+          <WeekGrid
+            days={weekDays}
+            today={today}
+            now={now}
+            onPickDay={(k) => {
+              setSelected(k);
+              setSettings({ calendarView: 'month' });
+            }}
+          />
+          <Text variant="caption" tone="faint" style={{ marginTop: space.sm }}>
+            {t('cal.weekHint')}
+          </Text>
+        </Animated.View>
       ) : (
       <SplitLayout
         desktop={isDesktop}
@@ -310,141 +314,6 @@ export default function CalendarScreen() {
       />
       )}
     </Screen>
-  );
-}
-
-/** Vista semanal: los siete días a la vez con sus eventos, recordatorios y tareas. */
-function WeekView({
-  days,
-  events,
-  tasks,
-  reminders,
-  columns,
-  today,
-  now,
-}: {
-  days: Date[];
-  events: CalendarEvent[];
-  tasks: Task[];
-  reminders: Reminder[];
-  columns: boolean;
-  today: string;
-  now: Date;
-}) {
-  const { c } = useTheme();
-  const { t } = useT();
-  const use24h = useStore((s) => s.settings.use24h);
-  const toggleTask = useStore((s) => s.toggleTask);
-
-  return (
-    <View style={columns ? { flexDirection: 'row', gap: space.sm, alignItems: 'stretch' } : { gap: space.sm }}>
-      {days.map((d, di) => {
-        const k = toKey(d);
-        const isToday = k === today;
-        const evs = eventsOn(events, k);
-        const rems = reminders.filter((r) => toKey(new Date(r.at)) === k).sort((a, b) => a.at - b.at);
-        const tks = tasks.filter((x) => x.due === k).sort((a, b) => Number(a.done) - Number(b.done) || b.priority - a.priority);
-        const empty = evs.length + rems.length + tks.length === 0;
-        return (
-          <Animated.View
-            key={k}
-            entering={FadeInDown.delay(di * 25).duration(motion.base)}
-            style={[
-              styles.weekCol,
-              columns ? { flex: 1, minWidth: 0, minHeight: 360 } : null,
-              { backgroundColor: c.surface, borderColor: isToday ? c.accent : c.border },
-            ]}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: space.sm }}>
-              <View style={{ flexDirection: columns ? 'column' : 'row', alignItems: columns ? 'flex-start' : 'baseline', gap: columns ? 0 : space.sm }}>
-                <Text variant="label" tone={isToday ? 'accent' : 'faint'} upper>
-                  {weekdayName(d.getDay(), 'short')}
-                </Text>
-                <Text variant="heading" tabular style={{ color: isToday ? c.accent : c.text }}>
-                  {d.getDate()}
-                </Text>
-              </View>
-              <Pressable
-                onPress={() => router.push({ pathname: '/form/event', params: { date: k } })}
-                accessibilityRole="button"
-                accessibilityLabel={`${t('cal.newEvent')} · ${formatLongDate(d)}`}
-                hitSlop={8}
-                style={(st) => [styles.weekAdd, { backgroundColor: (st as { hovered?: boolean }).hovered || st.pressed ? c.surfaceAlt : 'transparent' }]}
-              >
-                <Icon name="plus" size={14} color={c.textMuted} />
-              </Pressable>
-            </View>
-
-            <View style={{ gap: 6 }}>
-              {evs.map((e) => {
-                const live = !e.allDay && isToday && (() => {
-                  const m = now.getHours() * 60 + now.getMinutes();
-                  const [sh, sm] = e.start.split(':').map(Number);
-                  const [eh, em] = e.end.split(':').map(Number);
-                  return m >= sh * 60 + sm && m < eh * 60 + em;
-                })();
-                return (
-                  <Pressable
-                    key={e.id}
-                    onPress={() => router.push({ pathname: '/form/event', params: { id: e.id, occ: k } })}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${e.title}, ${e.allDay ? t('row.allDay') : formatTime(e.start, use24h)}`}
-                    style={[styles.weekItem, { backgroundColor: c.surfaceAlt, borderLeftColor: e.color, borderColor: live ? e.color : 'transparent' }]}
-                  >
-                    <Text variant="caption" tone="muted" tabular numberOfLines={1}>
-                      {e.allDay ? t('row.allDay') : `${formatTime(e.start, use24h)} – ${formatTime(e.end, use24h)}`}
-                    </Text>
-                    <Text variant="caption" numberOfLines={2} style={{ fontWeight: '600', color: c.text }}>
-                      {e.title}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-              {rems.map((r) => (
-                <Pressable
-                  key={r.id}
-                  onPress={() => router.push({ pathname: '/form/reminder', params: { id: r.id } })}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${r.title}, ${formatClock(r.at, use24h)}`}
-                  style={styles.weekRow}
-                >
-                  <Icon name="bell" size={13} color={r.done ? c.textFaint : c.accent} />
-                  <Text variant="caption" numberOfLines={2} style={{ flex: 1, color: r.done ? c.textFaint : c.text }}>
-                    <Text variant="caption" tone="muted" tabular>
-                      {formatClock(r.at, use24h)}{' '}
-                    </Text>
-                    {r.title}
-                  </Text>
-                </Pressable>
-              ))}
-              {tks.map((x) => (
-                <Pressable
-                  key={x.id}
-                  onPress={() => router.push({ pathname: '/form/task', params: { id: x.id } })}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('row.editA11y', { x: x.title })}
-                  style={styles.weekRow}
-                >
-                  <Checkbox checked={x.done} onToggle={() => toggleTask(x.id)} label={x.title} size={16} color={x.priority === 2 ? c.danger : undefined} />
-                  <Text
-                    variant="caption"
-                    numberOfLines={2}
-                    style={{ flex: 1, color: x.done ? c.textFaint : c.text, textDecorationLine: x.done ? 'line-through' : 'none' }}
-                  >
-                    {x.title}
-                  </Text>
-                </Pressable>
-              ))}
-              {empty ? (
-                <Text variant="caption" tone="faint">
-                  {t('cal.weekFree')}
-                </Text>
-              ) : null}
-            </View>
-          </Animated.View>
-        );
-      })}
-    </View>
   );
 }
 

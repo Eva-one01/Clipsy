@@ -29,7 +29,7 @@ function roundedNow() {
 
 export default function EventForm() {
   const { t } = useT();
-  const { id, date, occ } = useLocalSearchParams<{ id?: string; date?: string; occ?: string }>();
+  const { id, date, occ, start: startParam } = useLocalSearchParams<{ id?: string; date?: string; occ?: string; start?: string }>();
   const existing = useStore((s) => (id ? s.events.find((e) => e.id === id) : undefined));
   const addEvent = useStore((s) => s.addEvent);
   const updateEvent = useStore((s) => s.updateEvent);
@@ -37,7 +37,8 @@ export default function EventForm() {
   const skipOccurrence = useStore((s) => s.skipOccurrence);
   const use24h = useStore((s) => s.settings.use24h);
 
-  const startDefault = roundedNow();
+  // Al hacer clic en un hueco de la semana llega la hora elegida.
+  const startDefault = startParam && /^\d{2}:\d{2}$/.test(startParam) ? timeToMinutes(startParam) : roundedNow();
   const [title, setTitle] = useState(existing?.title ?? '');
   const [day, setDay] = useState(existing?.date ?? date ?? todayKey());
   const [start, setStart] = useState(existing?.start ?? minutesToTime(startDefault));
