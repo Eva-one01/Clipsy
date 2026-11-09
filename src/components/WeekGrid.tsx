@@ -51,6 +51,8 @@ interface Drag {
   /** Diferencia entre el punto agarrado y el inicio del elemento, en minutos. */
   grab: number;
   moved: boolean;
+  /** «resize»: se jala el borde de abajo para cambiar la duración. */
+  mode: 'move' | 'resize';
 }
 
 const clamp = (n: number, a: number, b: number) => Math.max(a, Math.min(b, n));
@@ -138,9 +140,9 @@ export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today:
   const allDayRef = useRef<View>(null);
   const scrollRef = useRef<ScrollView>(null);
   const dragRef = useRef<Drag | null>(null);
-  const [drag, setDrag] = useState<{ key: string; day: number; start: number } | null>(null);
+  const [drag, setDrag] = useState<{ key: string; day: number; start: number; dur: number; mode: 'move' | 'resize' } | null>(null);
   const bgDown = useRef<{ x: number; y: number } | null>(null);
-  const dragPos = useRef<{ day: number; start: number } | null>(null);
+  const dragPos = useRef<{ day: number; start: number; dur: number } | null>(null);
 
   // Al abrir: la cuadrícula empieza un par de horas antes de la hora actual.
   useEffect(() => {
@@ -157,9 +159,9 @@ export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today:
     else router.push({ pathname: '/form/task', params: { id: it.id } });
   };
 
-  const commit = (it: Item, day: number, start: number) => {
+  const commit = (it: Item, day: number, start: number, dur = it.dur) => {
     const newKey = keys[day];
-    if (day === it.day && start === it.start) return;
+    if (day === it.day && start === it.start && dur === it.dur) return;
     if (it.kind === 'task') return updateTask(it.id, { due: newKey });
     if (it.kind === 'reminder') {
       const d = fromKey(newKey);
@@ -167,7 +169,7 @@ export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today:
       return updateReminder(it.id, { at: d.getTime() });
     }
     const ev = it.ev!;
-    const time = it.allDay ? {} : { start: minutesToTime(start), end: minutesToTime(Math.min(start + it.dur, DAY_MIN - 1)) };
+    const time = it.allDay ? {} : { start: minutesToTime(start), end: minutesToTime(Math.min(start + dur, DAY_MIN - 1)) };
     if (ev.repeat === 'none') return updateEvent(ev.id, { date: newKey, ...time });
     // Evento que se repite: mover solo esta vez o toda la serie.
     const delta = Math.round((fromKey(newKey).getTime() - fromKey(it.occ).getTime()) / 86_400_000);
@@ -191,9 +193,26 @@ export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today:
     if (!d.moved && Math.hypot(ev.clientX - d.x0, ev.clientY - d.y0) < 4) return;
     d.moved = true;
     document.body.style.userSelect = 'none';
-    document.body.style.cursor = 'grabbing';
+    document.body.style.cursor = d.mode === 'resize' ? 'ns-resize' : 'grabbing';
     const box = el(d.item.allDay ? allDayRef.current : gridRef.current)?.getBoundingClientRect();
     if (!box) return;
+    const autoScroll = () => {
+      // Cerca del borde, la cuadrícula se desplaza sola.
+      const sc = scrollNode();
+      if (!sc) return;
+      const r = sc.getBoundingClientRect();
+      if (ev.clientY < r.top + 36) sc.scrollTop -= 14;
+      else if (ev.clientY > r.bottom - 36) sc.scrollTop += 14;
+    };
+    if (d.mode === 'resize') {
+      // Duración: del inicio hasta donde está el puntero, en cuartos de hora (mínimo 15 min, hasta las 23:59).
+      const pointer = ((ev.clientY - box.top) / HOUR_H) * 60;
+      const dur = clamp(snap(pointer - d.item.start), SNAP, DAY_MIN - 1 - d.item.start);
+      autoScroll();
+      dragPos.current = { day: d.item.day, start: d.item.start, dur };
+      setDrag((p) => (p && p.key === d.item.key && p.dur === dur ? p : { key: d.item.key, day: d.item.day, start: d.item.start, dur, mode: 'resize' }));
+      return;
+    }
     const colW = (box.width - GUTTER) / 7;
     const day = clamp(Math.floor((ev.clientX - box.left - GUTTER) / colW), 0, 6);
     let start = d.item.start;
@@ -201,16 +220,10 @@ export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today:
       // El evento no puede pasar de las 23:59.
       const maxStart = Math.max(0, Math.floor((d.item.kind === 'event' ? DAY_MIN - 1 - d.item.dur : DAY_MIN - SNAP) / SNAP) * SNAP);
       start = clamp(snap(((ev.clientY - box.top) / HOUR_H) * 60 - d.grab), 0, maxStart);
-      // Cerca del borde, la cuadrícula se desplaza sola.
-      const sc = scrollNode();
-      if (sc) {
-        const r = sc.getBoundingClientRect();
-        if (ev.clientY < r.top + 36) sc.scrollTop -= 14;
-        else if (ev.clientY > r.bottom - 36) sc.scrollTop += 14;
-      }
+      autoScroll();
     }
-    dragPos.current = { day, start };
-    setDrag((p) => (p && p.key === d.item.key && p.day === day && p.start === start ? p : { key: d.item.key, day, start }));
+    dragPos.current = { day, start, dur: d.item.dur };
+    setDrag((p) => (p && p.key === d.item.key && p.day === day && p.start === start ? p : { key: d.item.key, day, start, dur: d.item.dur, mode: 'move' }));
   };
 
   const onUp = () => {
@@ -225,10 +238,10 @@ export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today:
     setDrag(null);
     if (!d) return;
     if (!d.moved) open(d.item);
-    else if (pos) commit(d.item, pos.day, pos.start);
+    else if (pos) commit(d.item, pos.day, pos.start, pos.dur);
   };
 
-  const startDrag = (it: Item, e: PE) => {
+  const startDrag = (it: Item, e: PE, mode: 'move' | 'resize' = 'move') => {
     e.stopPropagation();
     if ((e.nativeEvent.button ?? 0) !== 0) return;
     let grab = 0;
@@ -236,7 +249,7 @@ export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today:
       const box = el(gridRef.current)?.getBoundingClientRect();
       if (box) grab = ((e.nativeEvent.clientY - box.top) / HOUR_H) * 60 - it.start;
     }
-    dragRef.current = { item: it, x0: e.nativeEvent.clientX, y0: e.nativeEvent.clientY, grab, moved: false };
+    dragRef.current = { item: it, x0: e.nativeEvent.clientX, y0: e.nativeEvent.clientY, grab, moved: false, mode };
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
   };
@@ -266,18 +279,20 @@ export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today:
   const gridH = Math.max(320, winH - 450 - rowMax * 26);
 
   /** Posición mientras se arrastra (o la normal). */
-  const place = (it: Item) => (drag && drag.key === it.key ? { day: drag.day, start: drag.start, dragging: true } : { day: it.day, start: it.start, dragging: false });
+  const place = (it: Item) =>
+    drag && drag.key === it.key ? { day: drag.day, start: drag.start, dur: drag.dur, dragging: true, resizing: drag.mode === 'resize' } : { day: it.day, start: it.start, dur: it.dur, dragging: false, resizing: false };
 
   const renderTimed = (it: Item) => {
     const p = place(it);
     const top = (p.start / 60) * HOUR_H;
-    const h = Math.max(22, (it.dur / 60) * HOUR_H - 2);
-    const w = p.dragging ? 1 : 1 / it.cols;
-    const left = p.dragging ? 0 : it.col / it.cols;
+    const h = Math.max(22, (p.dur / 60) * HOUR_H - 2);
+    // Al moverlo ocupa todo el ancho del día; al cambiar su duración conserva su sitio.
+    const w = p.dragging && !p.resizing ? 1 : 1 / it.cols;
+    const left = p.dragging && !p.resizing ? 0 : it.col / it.cols;
     const isRem = it.kind === 'reminder';
     const label = isRem
       ? formatClock(new Date(2000, 0, 1, Math.floor(p.start / 60), p.start % 60), use24h)
-      : `${formatTime(minutesToTime(p.start), use24h)} – ${formatTime(minutesToTime(Math.min(p.start + it.dur, DAY_MIN - 1)), use24h)}`;
+      : `${formatTime(minutesToTime(p.start), use24h)} – ${formatTime(minutesToTime(Math.min(p.start + p.dur, DAY_MIN - 1)), use24h)}`;
     return (
       <PView
         key={it.key}
@@ -313,10 +328,20 @@ export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today:
             </Text>
           ) : null}
         </View>
-        {h > 30 ? (
+        {h > 30 || p.resizing ? (
           <Text variant="caption" tabular numberOfLines={1} style={{ color: c.textMuted, fontSize: 11 }}>
             {label}
           </Text>
+        ) : null}
+        {it.kind === 'event' ? (
+          // Borde de abajo: se jala para alargar o acortar el evento.
+          <PView
+            onPointerDown={(e: PE) => startDrag(it, e, 'resize')}
+            accessibilityLabel={t('cal.resizeA11y')}
+            style={[styles.resize, webResize]}
+          >
+            {h > 30 ? <View style={[styles.grip, { backgroundColor: it.color, opacity: p.resizing ? 0.9 : 0.45 }]} /> : null}
+          </PView>
         ) : null}
       </PView>
     );
@@ -452,6 +477,7 @@ export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today:
 }
 
 const webGrab = { cursor: 'grab' } as object;
+const webResize = { cursor: 'ns-resize' } as object;
 const webLift = { boxShadow: '0 8px 24px rgba(0,0,0,0.22)' } as object;
 
 const styles = StyleSheet.create({
@@ -460,5 +486,7 @@ const styles = StyleSheet.create({
   headCell: { flex: 1, alignItems: 'center', gap: 2 },
   dayNum: { minWidth: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   block: { position: 'absolute', borderRadius: radius.sm, borderWidth: 1, paddingLeft: 8, paddingRight: 4, paddingVertical: 3, overflow: 'hidden', gap: 1 },
+  resize: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 8, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 2 },
+  grip: { width: 18, height: 3, borderRadius: 2 },
   chip: { position: 'absolute', height: 22, borderRadius: radius.sm, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 6, overflow: 'hidden' },
 });
