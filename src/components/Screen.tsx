@@ -29,13 +29,15 @@ interface ScreenProps {
   onTitlePress?: () => void;
   titleOpen?: boolean;
   titleHint?: string;
+  /** Ancho máximo del contenido en escritorio (por defecto, ancho de lectura). */
+  maxWidth?: number;
 }
 
 /**
  * Contenedor estándar: título grande que se desvanece hacia una barra compacta
  * al desplazarse, con márgenes y espacio para la barra de pestañas.
  */
-export function Screen({ title, subtitle, actions, children, tabbed, header, scroll = true, leading, clocks = true, onTitlePress, titleOpen, titleHint }: ScreenProps) {
+export function Screen({ title, subtitle, actions, children, tabbed, header, scroll = true, leading, clocks = true, onTitlePress, titleOpen, titleHint, maxWidth = CONTENT_MAX_WIDTH }: ScreenProps) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   const isDesktop = useIsDesktop();
@@ -56,7 +58,7 @@ export function Screen({ title, subtitle, actions, children, tabbed, header, scr
   // En escritorio no hay barra inferior: la navegación va en la barra lateral.
   const bottomPad = (tabbed && !isDesktop ? TAB_BAR_HEIGHT + insets.bottom : insets.bottom) + space.xxxl;
   // En monitores anchos, el contenido se centra con un ancho de lectura cómodo.
-  const column = isDesktop ? { width: '100%' as const, maxWidth: CONTENT_MAX_WIDTH, alignSelf: 'center' as const } : null;
+  const column = isDesktop ? { width: '100%' as const, maxWidth, alignSelf: 'center' as const } : null;
   const { primary } = useHeaderClocks();
   const showClocks = clocks && !!primary;
   // Los relojes quedan centrados verticalmente en la barra compacta (44 px de alto, píldora de 32).

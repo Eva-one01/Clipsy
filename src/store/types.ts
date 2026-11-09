@@ -130,6 +130,8 @@ export interface Settings {
   accent: AccentId;
   currency: string;
   weekStartsMonday: boolean;
+  /** Vista del calendario: mes o semana. */
+  calendarView?: 'month' | 'week';
   monthlyBudget: number;
   onboarded: boolean;
   use24h: boolean;

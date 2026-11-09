@@ -3,13 +3,19 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { FadeIn, FadeInDown, SlideInLeft, SlideInRight } from 'react-native-reanimated';
+import { Checkbox } from '@/components/Checkbox';
 import { EventRow, TaskRow } from '@/components/rows';
 import { Screen } from '@/components/Screen';
+import { Segmented } from '@/components/Segmented';
 import { Text } from '@/components/Text';
-import { EmptyState, IconButton, SectionHeader } from '@/components/ui';
+import { EmptyState, Icon, IconButton, SectionHeader } from '@/components/ui';
 import {
+  addDays,
   addMonths,
   eventsOn,
+  formatClock,
+  formatShortDate,
+  formatTime,
   formatLongDate,
   formatMonthTitle,
   fromKey,
@@ -18,11 +24,13 @@ import {
   toKey,
   todayKey,
   weekdayLabels,
+  weekdayName,
 } from '@/lib/date';
 import { useIsDesktop } from '@/desktop/layout';
 import { useT } from '@/i18n/useT';
 import { useNow } from '@/lib/useNow';
 import { useStore } from '@/store';
+import type { CalendarEvent, Reminder, Task } from '@/store/types';
 import { useTheme } from '@/theme/ThemeProvider';
 import { motion, radius, space } from '@/theme/tokens';
 
@@ -33,7 +41,10 @@ export default function CalendarScreen() {
   const now = useNow();
   const events = useStore((s) => s.events);
   const tasks = useStore((s) => s.tasks);
+  const reminders = useStore((s) => s.reminders);
   const weekStartsMonday = useStore((s) => s.settings.weekStartsMonday);
+  const view = useStore((s) => s.settings.calendarView ?? 'month');
+  const setSettings = useStore((s) => s.setSettings);
 
   const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [selected, setSelected] = useState(todayKey());
@@ -55,12 +66,25 @@ export default function CalendarScreen() {
     return m;
   }, [days, events, tasks]);
 
+  // Semana del día elegido (empieza en lunes o domingo según los ajustes).
+  const weekDays = useMemo(() => {
+    const d = fromKey(selected);
+    const offset = weekStartsMonday ? (d.getDay() + 6) % 7 : d.getDay();
+    const start = addDays(d, -offset);
+    return Array.from({ length: 7 }, (_, i) => addDays(start, i));
+  }, [selected, weekStartsMonday]);
+  const weekKey = toKey(weekDays[0]);
+
   const dayEvents = useMemo(() => eventsOn(events, selected), [events, selected]);
   const dayTasks = useMemo(() => tasks.filter((x) => x.due === selected), [tasks, selected]);
 
   const shift = (n: 1 | -1) => {
     setDir(n);
-    setMonth((m) => addMonths(m, n));
+    if (view === 'week') {
+      const d = addDays(fromKey(selected), 7 * n);
+      setSelected(toKey(d));
+      setMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+    } else setMonth((m) => addMonths(m, n));
   };
 
   const togglePicker = () => {
@@ -72,6 +96,7 @@ export default function CalendarScreen() {
     const d = new Date(pickYear, m, 1);
     setDir(d < month ? -1 : 1);
     setMonth(d);
+    if (view === 'week') setSelected(toKey(d));
     setPicker(false);
   };
 
@@ -92,20 +117,25 @@ export default function CalendarScreen() {
     });
 
   const today = todayKey();
+  // Escritorio: celdas más grandes para que el mes se lea de un vistazo.
+  const cellH = isDesktop ? 62 : 48;
+  const circle = isDesktop ? 40 : 32;
+  const dot = isDesktop ? 5 : 4;
   const monthKey = `${month.getFullYear()}-${month.getMonth()}`;
 
   return (
     <Screen
       tabbed
-      title={formatMonthTitle(month)}
-      subtitle={t('cal.subtitle')}
+      maxWidth={isDesktop ? 1180 : undefined}
+      title={formatMonthTitle(view === 'week' ? weekDays[0] : month)}
+      subtitle={view === 'week' ? `${formatShortDate(weekDays[0])} – ${formatShortDate(weekDays[6])}` : t('cal.subtitle')}
       onTitlePress={togglePicker}
       titleOpen={picker}
       titleHint={t('cal.pickMonth')}
       actions={
         <>
-          <IconButton icon="chevron-left" label={t('common.prevMonth')} onPress={() => shift(-1)} />
-          <IconButton icon="chevron-right" label={t('common.nextMonth')} onPress={() => shift(1)} />
+          <IconButton icon="chevron-left" label={view === 'week' ? t('cal.prevWeek') : t('common.prevMonth')} onPress={() => shift(-1)} />
+          <IconButton icon="chevron-right" label={view === 'week' ? t('cal.nextWeek') : t('common.nextMonth')} onPress={() => shift(1)} />
           <IconButton icon="plus" label={t('cal.newEvent')} variant="accent" onPress={() => router.push({ pathname: '/form/event', params: { date: selected } })} />
         </>
       }
@@ -140,6 +170,30 @@ export default function CalendarScreen() {
           </View>
         </Animated.View>
       ) : null}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, marginBottom: space.lg }}>
+        <View style={{ width: 240 }}>
+          <Segmented<'month' | 'week'>
+            value={view}
+            onChange={(v) => setSettings({ calendarView: v })}
+            options={[
+              { value: 'month', label: t('cal.viewMonth') },
+              { value: 'week', label: t('cal.viewWeek') },
+            ]}
+          />
+        </View>
+        {view === 'week' && !weekDays.some((d) => toKey(d) === today) ? (
+          <Text variant="caption" tone="accent" onPress={goToday} accessibilityRole="button">
+            {t('cal.goToday')}
+          </Text>
+        ) : null}
+      </View>
+      {view === 'week' ? (
+        <GestureDetector gesture={swipe}>
+          <Animated.View key={weekKey} entering={(dir === 1 ? SlideInRight : SlideInLeft).duration(motion.base)}>
+            <WeekView days={weekDays} events={events} tasks={tasks} reminders={reminders} columns={isDesktop} today={today} now={now} />
+          </Animated.View>
+        </GestureDetector>
+      ) : (
       <SplitLayout
         desktop={isDesktop}
         left={
@@ -173,12 +227,12 @@ export default function CalendarScreen() {
                   accessibilityRole="button"
                   accessibilityState={{ selected: isSel }}
                   accessibilityLabel={`${formatLongDate(d)}${mark ? `, ${t('cal.eventsA11y', { n: mark.colors.length })}` : ''}`}
-                  style={styles.cell}
+                  style={[styles.cell, { height: cellH }]}
                 >
                   <View
                     style={{
-                      width: CIRCLE,
-                      height: CIRCLE,
+                      width: circle,
+                      height: circle,
                       borderRadius: radius.pill,
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -188,7 +242,7 @@ export default function CalendarScreen() {
                     }}
                   >
                     <Text
-                      variant="caption"
+                      variant={isDesktop ? 'body' : 'caption'}
                       tabular
                       style={{
                         color: isSel ? c.bg : isToday ? c.accent : inMonth ? c.text : c.textFaint,
@@ -198,12 +252,12 @@ export default function CalendarScreen() {
                       {d.getDate()}
                     </Text>
                   </View>
-                  <View style={{ flexDirection: 'row', gap: 3, height: 4, marginTop: 1 }}>
+                  <View style={{ flexDirection: 'row', gap: 3, height: dot, marginTop: 2 }}>
                     {mark?.colors.map((col, i) => (
-                      <View key={i} style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: inMonth ? col : c.textFaint }} />
+                      <View key={i} style={{ width: dot, height: dot, borderRadius: dot / 2, backgroundColor: inMonth ? col : c.textFaint }} />
                     ))}
                     {mark && mark.tasks > 0 && mark.colors.length < 3 ? (
-                      <View style={{ width: 4, height: 4, borderRadius: 1, backgroundColor: c.textMuted }} />
+                      <View style={{ width: dot, height: dot, borderRadius: 1, backgroundColor: c.textMuted }} />
                     ) : null}
                   </View>
                 </Pressable>
@@ -254,11 +308,147 @@ export default function CalendarScreen() {
       </>
         }
       />
+      )}
     </Screen>
   );
 }
 
-/** Escritorio: calendario compacto a la izquierda y detalle del día a la derecha. Móvil: uno debajo del otro. */
+/** Vista semanal: los siete días a la vez con sus eventos, recordatorios y tareas. */
+function WeekView({
+  days,
+  events,
+  tasks,
+  reminders,
+  columns,
+  today,
+  now,
+}: {
+  days: Date[];
+  events: CalendarEvent[];
+  tasks: Task[];
+  reminders: Reminder[];
+  columns: boolean;
+  today: string;
+  now: Date;
+}) {
+  const { c } = useTheme();
+  const { t } = useT();
+  const use24h = useStore((s) => s.settings.use24h);
+  const toggleTask = useStore((s) => s.toggleTask);
+
+  return (
+    <View style={columns ? { flexDirection: 'row', gap: space.sm, alignItems: 'stretch' } : { gap: space.sm }}>
+      {days.map((d, di) => {
+        const k = toKey(d);
+        const isToday = k === today;
+        const evs = eventsOn(events, k);
+        const rems = reminders.filter((r) => toKey(new Date(r.at)) === k).sort((a, b) => a.at - b.at);
+        const tks = tasks.filter((x) => x.due === k).sort((a, b) => Number(a.done) - Number(b.done) || b.priority - a.priority);
+        const empty = evs.length + rems.length + tks.length === 0;
+        return (
+          <Animated.View
+            key={k}
+            entering={FadeInDown.delay(di * 25).duration(motion.base)}
+            style={[
+              styles.weekCol,
+              columns ? { flex: 1, minWidth: 0, minHeight: 360 } : null,
+              { backgroundColor: c.surface, borderColor: isToday ? c.accent : c.border },
+            ]}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: space.sm }}>
+              <View style={{ flexDirection: columns ? 'column' : 'row', alignItems: columns ? 'flex-start' : 'baseline', gap: columns ? 0 : space.sm }}>
+                <Text variant="label" tone={isToday ? 'accent' : 'faint'} upper>
+                  {weekdayName(d.getDay(), 'short')}
+                </Text>
+                <Text variant="heading" tabular style={{ color: isToday ? c.accent : c.text }}>
+                  {d.getDate()}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => router.push({ pathname: '/form/event', params: { date: k } })}
+                accessibilityRole="button"
+                accessibilityLabel={`${t('cal.newEvent')} · ${formatLongDate(d)}`}
+                hitSlop={8}
+                style={(st) => [styles.weekAdd, { backgroundColor: (st as { hovered?: boolean }).hovered || st.pressed ? c.surfaceAlt : 'transparent' }]}
+              >
+                <Icon name="plus" size={14} color={c.textMuted} />
+              </Pressable>
+            </View>
+
+            <View style={{ gap: 6 }}>
+              {evs.map((e) => {
+                const live = !e.allDay && isToday && (() => {
+                  const m = now.getHours() * 60 + now.getMinutes();
+                  const [sh, sm] = e.start.split(':').map(Number);
+                  const [eh, em] = e.end.split(':').map(Number);
+                  return m >= sh * 60 + sm && m < eh * 60 + em;
+                })();
+                return (
+                  <Pressable
+                    key={e.id}
+                    onPress={() => router.push({ pathname: '/form/event', params: { id: e.id, occ: k } })}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${e.title}, ${e.allDay ? t('row.allDay') : formatTime(e.start, use24h)}`}
+                    style={[styles.weekItem, { backgroundColor: c.surfaceAlt, borderLeftColor: e.color, borderColor: live ? e.color : 'transparent' }]}
+                  >
+                    <Text variant="caption" tone="muted" tabular numberOfLines={1}>
+                      {e.allDay ? t('row.allDay') : `${formatTime(e.start, use24h)} – ${formatTime(e.end, use24h)}`}
+                    </Text>
+                    <Text variant="caption" numberOfLines={2} style={{ fontWeight: '600', color: c.text }}>
+                      {e.title}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+              {rems.map((r) => (
+                <Pressable
+                  key={r.id}
+                  onPress={() => router.push({ pathname: '/form/reminder', params: { id: r.id } })}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${r.title}, ${formatClock(r.at, use24h)}`}
+                  style={styles.weekRow}
+                >
+                  <Icon name="bell" size={13} color={r.done ? c.textFaint : c.accent} />
+                  <Text variant="caption" numberOfLines={2} style={{ flex: 1, color: r.done ? c.textFaint : c.text }}>
+                    <Text variant="caption" tone="muted" tabular>
+                      {formatClock(r.at, use24h)}{' '}
+                    </Text>
+                    {r.title}
+                  </Text>
+                </Pressable>
+              ))}
+              {tks.map((x) => (
+                <Pressable
+                  key={x.id}
+                  onPress={() => router.push({ pathname: '/form/task', params: { id: x.id } })}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('row.editA11y', { x: x.title })}
+                  style={styles.weekRow}
+                >
+                  <Checkbox checked={x.done} onToggle={() => toggleTask(x.id)} label={x.title} size={16} color={x.priority === 2 ? c.danger : undefined} />
+                  <Text
+                    variant="caption"
+                    numberOfLines={2}
+                    style={{ flex: 1, color: x.done ? c.textFaint : c.text, textDecorationLine: x.done ? 'line-through' : 'none' }}
+                  >
+                    {x.title}
+                  </Text>
+                </Pressable>
+              ))}
+              {empty ? (
+                <Text variant="caption" tone="faint">
+                  {t('cal.weekFree')}
+                </Text>
+              ) : null}
+            </View>
+          </Animated.View>
+        );
+      })}
+    </View>
+  );
+}
+
+/** Ventana ancha: el mes a la izquierda y el detalle del día a la derecha. Ventana estrecha: uno debajo del otro. */
 function SplitLayout({ desktop, left, right }: { desktop: boolean; left: ReactNode; right: ReactNode }) {
   if (!desktop) {
     return (
@@ -270,19 +460,19 @@ function SplitLayout({ desktop, left, right }: { desktop: boolean; left: ReactNo
   }
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space.xxl }}>
-      <View style={{ width: 340 }}>{left}</View>
+      <View style={{ width: 520 }}>{left}</View>
       <View style={{ flex: 1, minWidth: 0 }}>{right}</View>
     </View>
   );
 }
 
-/** Celdas de altura fija: el mes ocupa lo mismo en un teléfono que en un monitor ancho. */
-const CELL_H = 42;
-const CIRCLE = 30;
-
 const styles = StyleSheet.create({
   grid: { borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: space.sm, paddingTop: space.md, paddingBottom: space.xs },
-  cell: { width: `${100 / 7}%`, height: CELL_H, alignItems: 'center', justifyContent: 'center' },
+  cell: { width: `${100 / 7}%`, alignItems: 'center', justifyContent: 'center' },
+  weekCol: { borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth * 2, padding: space.md },
+  weekAdd: { width: 26, height: 26, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+  weekItem: { borderRadius: radius.sm, borderLeftWidth: 3, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 6, gap: 1 },
+  weekRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingVertical: 3 },
   picker: { borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, padding: space.md, marginBottom: space.lg, gap: space.sm },
   pickerHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   months: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },

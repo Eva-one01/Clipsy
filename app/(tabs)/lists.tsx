@@ -24,11 +24,20 @@ export default function Lists() {
   const { t } = useT();
   const [tab, setTab] = useState<Tab>('tasks');
   const ideaRef = useRef<TextInput>(null);
+  const addIdea = useStore((s) => s.addIdea);
+  // El borrador de la idea vive aquí para que el botón + pueda guardarla.
+  const [ideaDraft, setIdeaDraft] = useState('');
+  const saveIdea = () => {
+    if (!ideaDraft.trim()) return false;
+    addIdea(ideaDraft.trim());
+    setIdeaDraft('');
+    return true;
+  };
 
   const onAdd = () => {
     if (tab === 'tasks') router.push('/form/task');
     else if (tab === 'goals') router.push('/form/goal');
-    else ideaRef.current?.focus();
+    else if (!saveIdea()) ideaRef.current?.focus();
   };
 
   return (
@@ -49,7 +58,7 @@ export default function Lists() {
       />
       <Animated.View key={tab} entering={FadeIn.duration(motion.base)} style={{ marginTop: space.lg }}>
         {tab === 'tasks' && <TasksPane />}
-        {tab === 'ideas' && <IdeasPane inputRef={ideaRef} />}
+        {tab === 'ideas' && <IdeasPane inputRef={ideaRef} draft={ideaDraft} setDraft={setIdeaDraft} save={saveIdea} />}
         {tab === 'goals' && <GoalsPane />}
       </Animated.View>
     </Screen>
@@ -138,18 +147,10 @@ function TasksPane() {
 
 /* ───────────── Ideas ───────────── */
 
-function IdeasPane({ inputRef }: { inputRef: RefObject<TextInput | null> }) {
+function IdeasPane({ inputRef, draft, setDraft, save }: { inputRef: RefObject<TextInput | null>; draft: string; setDraft: (v: string) => void; save: () => boolean }) {
   const { t } = useT();
   const ideas = useStore((s) => s.ideas);
-  const addIdea = useStore((s) => s.addIdea);
-  const [draft, setDraft] = useState('');
   const sorted = useMemo(() => [...ideas].sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.createdAt - a.createdAt), [ideas]);
-
-  const save = () => {
-    if (!draft.trim()) return;
-    addIdea(draft);
-    setDraft('');
-  };
 
   return (
     <View>
@@ -160,9 +161,15 @@ function IdeasPane({ inputRef }: { inputRef: RefObject<TextInput | null> }) {
         onChangeText={setDraft}
         multiline
         style={{ minHeight: 72, textAlignVertical: 'top' }}
-        submitBehavior="blurAndSubmit"
         returnKeyType="done"
-        onSubmitEditing={save}
+        // Intro guarda la idea; Mayús + Intro hace un salto de línea.
+        onKeyPress={(e) => {
+          const ev = e.nativeEvent as unknown as { key: string; shiftKey?: boolean; preventDefault?: () => void };
+          if (ev.key === 'Enter' && !ev.shiftKey) {
+            (e as unknown as { preventDefault?: () => void }).preventDefault?.();
+            save();
+          }
+        }}
         hint={t('lists.ideaHint')}
       />
       {sorted.length === 0 ? (

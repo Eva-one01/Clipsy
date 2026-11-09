@@ -86,7 +86,7 @@ export default function TransactionForm() {
           keyboardAppearance={isDark ? 'dark' : 'light'}
           accessibilityLabel={t('tx.amountA11y', { c: currency })}
           maxFontSizeMultiplier={1.2}
-          style={[typeScale.numeric, { fontSize: 52, lineHeight: 60, color: type === 'income' ? c.success : c.text, textAlign: 'center', minWidth: 160, fontVariant: ['tabular-nums'] }]}
+          style={[typeScale.numeric, { fontSize: 52, lineHeight: 60, color: type === 'income' ? c.success : c.danger, textAlign: 'center', minWidth: 160, fontVariant: ['tabular-nums'] }]}
         />
         <Text variant="caption" tone="faint">
           {valid ? formatMoney(amount, currency) : currency}
