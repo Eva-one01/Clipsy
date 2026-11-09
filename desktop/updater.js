@@ -81,12 +81,12 @@ function init(onChange, onBeforeInstall) {
   // Al abrir la app se revisa enseguida; si hay versión nueva, se descarga y se pide actualizar.
   setTimeout(check, 2 * 1000);
   // Revisar cuesta casi nada (latest.yml pesa menos de 1 KB); la descarga solo ocurre si hay versión nueva.
-  setInterval(check, 30 * 60 * 1000).unref?.();
+  setInterval(check, 10 * 60 * 1000).unref?.();
 }
 
-/** Al volver a mostrar la ventana: revisa si pasó un rato desde la última vez. */
+/** Al volver a mostrar la ventana: revisa si pasaron más de 10 minutos desde la última vez. */
 function checkIfStale() {
-  if (enabled() && Date.now() - lastCheck > 30 * 60 * 1000) check();
+  if (enabled() && Date.now() - lastCheck > 10 * 60 * 1000) check();
 }
 
 module.exports = { init, check, checkIfStale, install, get: () => state };
