@@ -371,6 +371,8 @@ function LicenseSection() {
         return t('upd.downloading', { v: update.version ?? '', p: update.progress ?? 0 });
       case 'ready':
         return t('upd.readyShort', { v: update.version ?? '' });
+      case 'installing':
+        return t('upd.installingShort');
       case 'available':
         return t('upd.availableShort', { v: update.version ?? '' });
       case 'none':
@@ -437,6 +439,31 @@ function LicenseSection() {
       <Text variant="caption" tone="faint" style={{ marginTop: space.md }}>
         {t('upd.dataNote')}
       </Text>
+
+      <ErrorReportsSection />
+    </>
+  );
+}
+
+/** Privacidad: informes de errores anónimos (solo si esta copia los tiene configurados). */
+function ErrorReportsSection() {
+  const { t } = useT();
+  const [st, setSt] = useState<{ enabled: boolean; available: boolean } | null>(null);
+  useEffect(() => {
+    desktop?.errorReports?.get().then(setSt).catch(() => undefined);
+  }, []);
+  if (!st?.available) return null;
+  return (
+    <>
+      <SectionHeader title={t('err.section')} />
+      <Card padded={false}>
+        <ListRow
+          icon="activity"
+          title={t('err.title')}
+          subtitle={t('err.sub')}
+          right={<Toggle value={st.enabled} onChange={(v) => desktop?.errorReports?.set(v).then(setSt)} label={t('err.title')} />}
+        />
+      </Card>
     </>
   );
 }

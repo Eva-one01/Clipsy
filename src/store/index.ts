@@ -211,6 +211,8 @@ export const useStore = create<State>()(
           done: false,
           doneAt: null,
           due: t.due ?? null,
+          time: t.due ? (t.time ?? null) : null,
+          duration: t.due && t.time ? (t.duration ?? 60) : null,
           priority: t.priority ?? 0,
           goalId: t.goalId ?? null,
           notes: t.notes ?? '',

@@ -82,12 +82,14 @@ export function TaskRow({ task, index = 0, showDue = true }: { task: Task; index
   const { c } = useTheme();
   const { t } = useT();
   const toggle = useStore((s) => s.toggleTask);
+  const use24hTask = useStore((s) => s.settings.use24h);
   const goal = useStore((s) => (task.goalId ? s.goals.find((g) => g.id === task.goalId) : undefined));
   const overdue = !task.done && task.due !== null && diffDays(task.due, todayKey()) < 0;
   const priorityColor = [c.textFaint, c.warning, c.danger][task.priority];
 
   const meta: string[] = [];
   if (showDue && task.due) meta.push(relativeDay(task.due));
+  if (task.due && task.time) meta.push(formatTime(task.time, use24hTask));
   if (goal) meta.push(goal.title);
 
   return (

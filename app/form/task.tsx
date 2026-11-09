@@ -6,9 +6,9 @@ import { DateTimeField } from '@/components/DateTimeField';
 import { DeleteButton, FieldLabel } from '@/components/formBits';
 import { FormGroup, FormRow, FormScreen } from '@/components/FormScreen';
 import { Input } from '@/components/Input';
-import { Chip } from '@/components/ui';
+import { Chip, Toggle } from '@/components/ui';
 import { useT } from '@/i18n/useT';
-import { addDays, fromKey, toKey, todayKey } from '@/lib/date';
+import { addDays, dateToTime, fromKey, timeToDate, toKey, todayKey } from '@/lib/date';
 import { useStore } from '@/store';
 import type { Priority } from '@/store/types';
 
@@ -17,6 +17,7 @@ type DueMode = 'none' | 'today' | 'tomorrow' | 'custom';
 export default function TaskForm() {
   const { t } = useT();
   const { id } = useLocalSearchParams<{ id?: string }>();
+  const use24h = useStore((s) => s.settings.use24h);
   const existing = useStore((s) => (id ? s.tasks.find((x) => x.id === id) : undefined));
   const goals = useStore((s) => s.goals);
   const addTask = useStore((s) => s.addTask);
@@ -33,12 +34,17 @@ export default function TaskForm() {
   const [custom, setCustom] = useState(existing?.due ?? toKey(addDays(new Date(), 2)));
   const [priority, setPriority] = useState<Priority>(existing?.priority ?? 0);
   const [goalId, setGoalId] = useState<string | null>(existing?.goalId ?? null);
+  // Hora opcional: con ella la tarea ocupa su hueco en la vista semanal.
+  const [timed, setTimed] = useState(!!existing?.time);
+  const [time, setTime] = useState(existing?.time ?? '09:00');
+  const [duration, setDuration] = useState(existing?.duration ?? 60);
 
   const due = mode === 'none' ? null : mode === 'today' ? today : mode === 'tomorrow' ? tomorrow : custom;
   const activeGoals = goals.filter((g) => !g.archived);
 
   const save = () => {
-    const payload = { title: title.trim(), notes: notes.trim(), due, priority, goalId };
+    const withTime = !!due && timed;
+    const payload = { title: title.trim(), notes: notes.trim(), due, time: withTime ? time : null, duration: withTime ? duration : null, priority, goalId };
     if (existing) updateTask(existing.id, payload);
     else addTask(payload);
   };
@@ -69,6 +75,27 @@ export default function TaskForm() {
             </FormGroup>
           </Animated.View>
         )}
+        {due ? (
+          <Animated.View entering={FadeIn} style={{ marginTop: 12, gap: 12 }}>
+            <FormGroup>
+              <FormRow label={t('task.atTime')} last={!timed}>
+                <Toggle value={timed} onChange={setTimed} label={t('task.atTime')} />
+              </FormRow>
+              {timed ? (
+                <FormRow label={t('task.time')} last>
+                  <DateTimeField mode="time" label={t('task.time')} value={timeToDate(time)} onChange={(d) => setTime(dateToTime(d))} use24h={use24h} />
+                </FormRow>
+              ) : null}
+            </FormGroup>
+            {timed ? (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {[15, 30, 60, 90, 120].map((m) => (
+                  <Chip key={m} label={m < 60 ? `${m} min` : m % 60 ? `${Math.floor(m / 60)} h ${m % 60}` : `${m / 60} h`} selected={duration === m} onPress={() => setDuration(m)} />
+                ))}
+              </View>
+            ) : null}
+          </Animated.View>
+        ) : null}
       </View>
 
       <View>

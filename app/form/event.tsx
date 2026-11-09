@@ -29,7 +29,7 @@ function roundedNow() {
 
 export default function EventForm() {
   const { t } = useT();
-  const { id, date, occ, start: startParam } = useLocalSearchParams<{ id?: string; date?: string; occ?: string; start?: string }>();
+  const { id, date, occ, start: startParam, end: endParam } = useLocalSearchParams<{ id?: string; date?: string; occ?: string; start?: string; end?: string }>();
   const existing = useStore((s) => (id ? s.events.find((e) => e.id === id) : undefined));
   const addEvent = useStore((s) => s.addEvent);
   const updateEvent = useStore((s) => s.updateEvent);
@@ -42,7 +42,9 @@ export default function EventForm() {
   const [title, setTitle] = useState(existing?.title ?? '');
   const [day, setDay] = useState(existing?.date ?? date ?? todayKey());
   const [start, setStart] = useState(existing?.start ?? minutesToTime(startDefault));
-  const [end, setEnd] = useState(existing?.end ?? minutesToTime(Math.min(startDefault + 60, 23 * 60 + 59)));
+  // Al arrastrar sobre un hueco de la semana llega también la hora de fin.
+  const endDefault = endParam && /^\d{2}:\d{2}$/.test(endParam) && timeToMinutes(endParam) > startDefault ? timeToMinutes(endParam) : Math.min(startDefault + 60, 23 * 60 + 59);
+  const [end, setEnd] = useState(existing?.end ?? minutesToTime(endDefault));
   const [allDay, setAllDay] = useState(existing?.allDay ?? false);
   const [repeat, setRepeat] = useState<Repeat>(existing?.repeat ?? 'none');
   const [interval, setIntervalN] = useState(existing?.interval ?? 1);

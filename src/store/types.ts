@@ -39,6 +39,10 @@ export interface Task {
   done: boolean;
   doneAt: number | null;
   due: DateKey | null;
+  /** Hora opcional (con fecha): la tarea aparece a esa hora en la semana. */
+  time?: TimeHM | null;
+  /** Duración en minutos cuando tiene hora (60 por defecto). */
+  duration?: number | null;
   priority: Priority;
   goalId: ID | null;
   notes: string;

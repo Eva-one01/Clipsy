@@ -31,6 +31,10 @@ app.setAppUserModelId('com.felipefranco.razor'); // necesario para las notificac
 // Support/Razor) para que nadie pierda nada al actualizar. No cambiar: ahí están los datos, la licencia y el equipo.
 app.setPath('userData', path.join(app.getPath('appData'), 'Razor'));
 
+// Informes de errores (Sentry): justo después de fijar la carpeta de datos, antes de que la app esté lista.
+const errors = require('./errors');
+errors.init();
+
 let win = null;
 let miniWin = null;
 let quickWin = null;
@@ -505,7 +509,12 @@ function registerIpc() {
   // Actualizaciones
   ipcMain.handle('razor:update:get', () => updater.get());
   ipcMain.handle('razor:update:check', () => updater.check());
-  ipcMain.on('razor:update:install', () => updater.install());
+  ipcMain.on('razor:update:install', (_e, opts) => updater.install({ visible: !!(opts && opts.visible) }));
+  ipcMain.on('razor:update:dismiss', () => updater.dismiss());
+  ipcMain.on('razor:error', (_e, p) => errors.report(p));
+  ipcMain.handle('razor:errors:get', () => errors.get());
+  ipcMain.handle('razor:errors:set', (_e, v) => errors.setEnabled(!!v));
+  ipcMain.on('razor:update:download', () => updater.openDownloads());
   // Abre páginas de la web de Clipsy (comprar, recuperar contraseña, gestionar equipos).
   ipcMain.on('razor:open-site', (_e, where) => {
     const allowed = { buy: '/account?buy=1', account: '/account', devices: '/account#license', forgot: '/account', downloads: '/account#downloads' };
@@ -555,6 +564,7 @@ function start() {
   app.on('activate', showWindow); // clic en el Dock (macOS)
   app.on('before-quit', () => {
     quitting = true;
+    updater.noteQuit();
   });
   app.on('will-quit', () => globalShortcut.unregisterAll());
 }

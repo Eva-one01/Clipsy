@@ -24,4 +24,8 @@ PEGA-AQUI-LA-CLAVE-PUBLICA
   // Ponlo en true solo si firmas la app de macOS con un certificado de Apple Developer.
   // Sin firma, en Mac la app avisa de la versión nueva y abre la página de descargas.
   macAutoUpdate: false,
+
+  // Informes de errores (Sentry → tu proyecto → Settings → Client Keys (DSN)). El DSN es público:
+  // solo permite ENVIAR informes. Vacío = sin informes.
+  sentryDsn: '',
 };

@@ -38,7 +38,7 @@ export type LicenseError =
   | 'generic'
   | string;
 
-export type UpdateStatus = 'idle' | 'disabled' | 'checking' | 'none' | 'available' | 'downloading' | 'ready' | 'error';
+export type UpdateStatus = 'idle' | 'disabled' | 'checking' | 'none' | 'available' | 'downloading' | 'ready' | 'installing' | 'error';
 export interface UpdateState {
   status: UpdateStatus;
   current: string;
@@ -46,6 +46,12 @@ export interface UpdateState {
   progress?: number;
   /** true en macOS sin firmar: se descarga desde la web en vez de instalarse sola. */
   manual?: boolean;
+  /** Ya está descargada (sirve para reintentar la instalación). */
+  downloaded?: boolean;
+  /** Se acaba de actualizar a esta versión (aviso al volver a abrir). */
+  updatedTo?: string;
+  /** Se intentó instalar esta versión y no se completó (plan B: reintentar o descargar el instalador). */
+  failedTo?: string;
 }
 
 /** Dictado por voz (whisper.cpp en el equipo). Solo Windows x64 por ahora. */
@@ -162,10 +168,18 @@ export interface RazorDesktop {
     setKey(b64: string): Promise<boolean>;
     clearKey(): Promise<boolean>;
   };
+  /** Informes de errores (Sentry). `available`: la copia tiene un DSN configurado. */
+  errorReports?: {
+    report(p: { kind?: string; name?: string; message: string; stack?: string; source?: string }): void;
+    get(): Promise<{ enabled: boolean; available: boolean }>;
+    set(v: boolean): Promise<{ enabled: boolean; available: boolean }>;
+  };
   updates?: {
     get(): Promise<UpdateState>;
     check(): Promise<UpdateState>;
-    install(): void;
+    install(opts?: { visible?: boolean }): void;
+    dismiss?(): void;
+    download?(): void;
     onChange(cb: (s: UpdateState) => void): () => void;
   };
 }
@@ -212,4 +226,16 @@ export function voiceKeys(): string[] | null {
 export function voiceKeysLabel(): string | null {
   const keys = voiceKeys();
   return keys ? keys.map((k) => (k === 'Mod' ? modKey : k)).join('+') : null;
+}
+
+// Errores de la interfaz → informes de errores (el proceso principal decide si se envían).
+if (desktop?.errorReports && typeof window !== 'undefined') {
+  const rep = desktop.errorReports;
+  window.addEventListener('error', (e) => {
+    rep.report({ kind: 'error', name: e.error?.name, message: e.message, stack: e.error?.stack, source: `${e.filename}:${e.lineno}:${e.colno}` });
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    const r = e.reason as { name?: string; message?: string; stack?: string } | undefined;
+    rep.report({ kind: 'unhandledrejection', name: r?.name, message: String(r?.message ?? r), stack: r?.stack });
+  });
 }

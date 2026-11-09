@@ -86,10 +86,28 @@ contextBridge.exposeInMainWorld('razorDesktop', {
     setKey: (b64) => ipcRenderer.invoke('razor:sync:key:set', String(b64)),
     clearKey: () => ipcRenderer.invoke('razor:sync:key:clear'),
   },
+  errorReports: {
+    // Errores de la interfaz (los escucha src/desktop/bridge.ts): solo el mensaje y dónde ocurrió.
+    report: (p) => {
+      try {
+        ipcRenderer.send('razor:error', {
+          kind: String((p && p.kind) || 'error'),
+          name: p && p.name ? String(p.name) : undefined,
+          message: String((p && p.message) || ''),
+          stack: p && p.stack ? String(p.stack) : undefined,
+          source: p && p.source ? String(p.source) : undefined,
+        });
+      } catch {}
+    },
+    get: () => ipcRenderer.invoke('razor:errors:get'),
+    set: (v) => ipcRenderer.invoke('razor:errors:set', !!v),
+  },
   updates: {
     get: () => ipcRenderer.invoke('razor:update:get'),
     check: () => ipcRenderer.invoke('razor:update:check'),
-    install: () => ipcRenderer.send('razor:update:install'),
+    install: (opts) => ipcRenderer.send('razor:update:install', opts && opts.visible ? { visible: true } : {}),
+    dismiss: () => ipcRenderer.send('razor:update:dismiss'),
+    download: () => ipcRenderer.send('razor:update:download'),
     onChange: (cb) => {
       const h = (_e, st) => cb(st);
       ipcRenderer.on('razor:update', h);
@@ -102,3 +120,4 @@ contextBridge.exposeInMainWorld('razorDesktop', {
     return () => ipcRenderer.removeListener('razor:menu', handler);
   },
 });
+

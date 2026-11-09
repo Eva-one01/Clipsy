@@ -72,7 +72,7 @@ async function manualCheck() {
 
 async function check() {
   if (!enabled()) return set({ status: 'disabled' }), state;
-  if (['checking', 'downloading', 'ready'].includes(state.status)) return state;
+  if (['checking', 'downloading', 'ready', 'installing'].includes(state.status)) return state;
   lastCheck = Date.now();
   set({ status: 'checking', error: undefined });
   try {
@@ -85,31 +85,83 @@ async function check() {
   return state;
 }
 
-function install() {
-  if (state.status === 'ready' && native()) {
+/** Intento de instalación pendiente: al volver a abrir se sabe si funcionó (versión nueva) o no (misma versión). */
+function attemptFile() {
+  return path.join(app.getPath('userData'), 'update-attempt.json');
+}
+function noteAttempt() {
+  try {
+    fs.writeFileSync(attemptFile(), JSON.stringify({ from: app.getVersion(), to: state.version, at: Date.now() }));
+  } catch {}
+}
+function readAttempt() {
+  try {
+    const a = JSON.parse(fs.readFileSync(attemptFile(), 'utf8'));
+    fs.unlinkSync(attemptFile());
+    // Solo cuenta si fue hace poco (la app se reabre sola al terminar de instalar).
+    return a && Date.now() - a.at < 24 * 60 * 60 * 1000 ? a : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Instala la versión descargada. `visible`: con el instalador a la vista (reintento tras un fallo),
+ * para que Windows pueda pedir permisos o mostrar el motivo del error.
+ */
+function install(opts = {}) {
+  const canNative = native() && (state.status === 'ready' || (state.failedTo && state.version === state.failedTo && state.downloaded));
+  if (canNative) {
     // Si la app está en una carpeta protegida (p. ej. Archivos de programa), el instalador en silencio no
     // puede escribir ahí: se abre visible para que Windows pida permiso de administrador.
-    const silent = process.platform !== 'win32' || installDirWritable();
+    const silent = !opts.visible && (process.platform !== 'win32' || installDirWritable());
     logger.info(`Instalar ${state.version} desde ${app.getVersion()} · carpeta ${path.dirname(process.execPath)} · silencioso ${silent}`);
-    beforeInstall();
-    // Se cierra todo antes de lanzar el instalador; la app se vuelve a abrir sola al terminar.
-    setImmediate(() => {
+    noteAttempt();
+    // La interfaz avisa «Instalando…» antes de que la ventana se cierre.
+    set({ status: 'installing' });
+    setTimeout(() => {
+      beforeInstall();
       try {
         autoUpdater.quitAndInstall(silent, true);
       } catch (e) {
         logger.error('quitAndInstall', e);
         set({ status: 'error' });
       }
-    });
-  } else if (state.status === 'available' && state.manual) {
-    shell.openExternal(license.accountUrl('downloads'));
+    }, 1600);
+  } else if ((state.status === 'available' && state.manual) || state.failedTo) {
+    openDownloads();
   }
+}
+
+function openDownloads() {
+  shell.openExternal(license.accountUrl('downloads'));
+}
+
+/** La persona cerró el aviso de «actualizado» o de «no se pudo instalar». */
+function dismiss() {
+  set({ updatedTo: undefined, failedTo: undefined });
+}
+
+/** Al salir con una versión ya descargada, se instala sola: se anota para comprobarlo al volver. */
+function noteQuit() {
+  if (state.status === 'ready' && native()) noteAttempt();
 }
 
 function init(onChange, onBeforeInstall) {
   listener = onChange || listener;
   beforeInstall = onBeforeInstall || beforeInstall;
   if (!enabled()) return set({ status: 'disabled' });
+  // ¿Venimos de instalar una versión? Si ya la tenemos, se avisa «Actualizado»; si no, se ofrece el plan B.
+  const attempt = readAttempt();
+  if (attempt && attempt.to) {
+    if (!newer(attempt.to, app.getVersion())) {
+      logger.info(`Actualizado de ${attempt.from} a ${app.getVersion()}`);
+      set({ updatedTo: app.getVersion() });
+    } else {
+      logger.error(`La instalación de ${attempt.to} no se completó: sigue la ${app.getVersion()}`);
+      set({ failedTo: attempt.to });
+    }
+  }
   if (native()) {
     autoUpdater.logger = logger;
     autoUpdater.setFeedURL({ provider: 'generic', url: CFG.updatesUrl });
@@ -118,7 +170,7 @@ function init(onChange, onBeforeInstall) {
     autoUpdater.on('update-available', (i) => set({ status: 'downloading', version: i.version, progress: 0 }));
     autoUpdater.on('update-not-available', () => set({ status: 'none' }));
     autoUpdater.on('download-progress', (p) => set({ status: 'downloading', progress: Math.round(p.percent) }));
-    autoUpdater.on('update-downloaded', (i) => set({ status: 'ready', version: i.version }));
+    autoUpdater.on('update-downloaded', (i) => set({ status: 'ready', version: i.version, downloaded: true }));
     autoUpdater.on('error', (e) => {
       logger.error('updater', e);
       set({ status: 'error' });
@@ -135,4 +187,4 @@ function checkIfStale() {
   if (enabled() && Date.now() - lastCheck > 10 * 60 * 1000) check();
 }
 
-module.exports = { init, check, checkIfStale, install, get: () => state };
+module.exports = { init, check, checkIfStale, install, dismiss, openDownloads, noteQuit, get: () => state };
