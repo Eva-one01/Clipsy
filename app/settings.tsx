@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { AccentPicker } from '@/components/AccentPicker';
+import { Dropdown } from '@/components/Dropdown';
 import { Input } from '@/components/Input';
 import { PermissionBanner } from '@/components/PermissionBanner';
 import { Screen } from '@/components/Screen';
@@ -147,24 +148,13 @@ export default function SettingsScreen() {
       <PermissionBanner />
 
       <SectionHeader title={t('set.language')} />
-      <Card padded={false}>
-        {languages.map((l, i) => {
-          const sel = settings.language === l.code;
-          return (
-            <View key={l.code}>
-              {i > 0 && <Divider inset={space.lg} />}
-              <ListRow
-                title={l.native}
-                onPress={() => {
-                  if (sel) return;
-                  setSettings({ language: l.code });
-                }}
-                right={sel ? <Icon name="check" size={18} color={c.accent} /> : <View style={{ width: 18 }} />}
-              />
-            </View>
-          );
-        })}
-      </Card>
+      <Dropdown
+        label={t('set.language')}
+        icon="globe"
+        value={settings.language}
+        options={languages.map((l) => ({ value: l.code, label: l.native }))}
+        onChange={(v) => setSettings({ language: v })}
+      />
 
       <SectionHeader title={t('set.appearance')} />
       <Segmented<ThemePref>

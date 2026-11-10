@@ -15,6 +15,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AccentPicker } from '@/components/AccentPicker';
 import { Logo } from '@/components/Logo';
+import { Dropdown } from '@/components/Dropdown';
 import { PressableScale } from '@/components/PressableScale';
 import { Segmented } from '@/components/Segmented';
 import { Text } from '@/components/Text';
@@ -120,32 +121,14 @@ export default function Onboarding() {
           </Animated.View>
 
           {step.id === 'lang' && (
-            <Animated.View entering={enter(3)} style={[styles.langList, { backgroundColor: c.surface, borderColor: c.border }]} accessibilityRole="radiogroup">
-              {languages.map((l, k) => {
-                const sel = l.code === lang;
-                return (
-                  <PressableScale
-                    key={l.code}
-                    scaleTo={0.985}
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected: sel }}
-                    accessibilityLabel={l.native}
-                    onPress={() => {
-                      setSettings({ language: l.code });
-                    }}
-                    style={[styles.langRow, { borderTopWidth: k ? StyleSheet.hairlineWidth : 0, borderTopColor: c.border }]}
-                  >
-                    <Text variant="body" style={{ flex: 1, fontWeight: sel ? '600' : '400' }}>
-                      {l.native}
-                    </Text>
-                    {sel && (
-                      <Animated.View entering={FadeIn.duration(motion.fast)}>
-                        <Icon name="check" size={18} color={c.accent} />
-                      </Animated.View>
-                    )}
-                  </PressableScale>
-                );
-              })}
+            <Animated.View entering={enter(3)}>
+              <Dropdown
+                label={t('set.language')}
+                icon="globe"
+                value={lang}
+                options={languages.map((l) => ({ value: l.code, label: l.native }))}
+                onChange={(v) => setSettings({ language: v })}
+              />
             </Animated.View>
           )}
 
@@ -211,6 +194,4 @@ export default function Onboarding() {
 }
 
 const styles = StyleSheet.create({
-  langList: { borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden', marginTop: space.sm },
-  langRow: { flexDirection: 'row', alignItems: 'center', minHeight: 50, paddingHorizontal: space.lg },
 });
