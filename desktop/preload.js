@@ -86,6 +86,13 @@ contextBridge.exposeInMainWorld('razorDesktop', {
     setKey: (b64) => ipcRenderer.invoke('razor:sync:key:set', String(b64)),
     clearKey: () => ipcRenderer.invoke('razor:sync:key:clear'),
   },
+  backups: {
+    list: () => ipcRenderer.invoke('razor:backups:list'),
+    saveDaily: (day, text) => ipcRenderer.invoke('razor:backups:saveDaily', String(day), String(text)),
+    saveSafety: (text) => ipcRenderer.invoke('razor:backups:saveSafety', String(text)),
+    read: (name) => ipcRenderer.invoke('razor:backups:read', String(name)),
+    openFolder: () => ipcRenderer.invoke('razor:backups:openFolder'),
+  },
   errorReports: {
     // Errores de la interfaz (los escucha src/desktop/bridge.ts): solo el mensaje y dónde ocurrió.
     report: (p) => {

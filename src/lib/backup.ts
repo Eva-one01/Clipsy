@@ -1,8 +1,7 @@
 /**
  * Copias de seguridad en escritorio/web: descarga un .json (Electron muestra el diálogo
  * "Guardar como" del sistema) e importa con el selector de archivos nativo.
- * El formato es idéntico al del móvil, así que una copia del teléfono se puede restaurar
- * en el ordenador y al revés.
+ * El formato también lo usan las copias automáticas diarias (desktop/backups.js).
  */
 import { useStore, type RazorData } from '@/store';
 import { todayKey } from './date';
@@ -10,9 +9,10 @@ import { parseBackup, type PickResult } from './backupFormat';
 
 export type { PickResult };
 
-export async function exportBackup(): Promise<void> {
+/** Todo lo que guarda la app, en el formato de las copias de seguridad. */
+export function buildBackup() {
   const s = useStore.getState();
-  const payload = {
+  return {
     app: 'Clipsy',
     version: 3,
     exportedAt: new Date().toISOString(),
@@ -25,9 +25,20 @@ export async function exportBackup(): Promise<void> {
       reminders: s.reminders,
       clocks: s.clocks,
       transactions: s.transactions,
+      recurring: s.recurring,
       settings: s.settings,
     } satisfies Partial<RazorData>,
   };
+}
+
+/** Cuántos elementos tiene una copia (sin contar los ajustes). */
+export function backupCount(b: ReturnType<typeof buildBackup>): number {
+  const d = b.data;
+  return d.events.length + d.tasks.length + d.ideas.length + d.goals.length + d.alarms.length + d.reminders.length + d.transactions.length + d.recurring.length;
+}
+
+export async function exportBackup(): Promise<void> {
+  const payload = buildBackup();
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

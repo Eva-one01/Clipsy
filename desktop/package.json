@@ -41,6 +41,7 @@
       "zip.js",
       "ocr.ps1",
       "sync.js",
+      "backups.js",
       "errors.js",
       "i18n.js",
       "app/**/*",

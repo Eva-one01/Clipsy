@@ -389,6 +389,16 @@ const es = {
   'backup.restored': 'Copia restaurada',
   'backup.invalid': 'Ese archivo no es una copia de seguridad válida de Clipsy.',
   'backup.exportFailed': 'No se pudo exportar la copia. Inténtalo de nuevo.',
+  'autob.title': 'Copias automáticas',
+  'autob.sub': 'Una al día, se guardan 7 días · última: {when}',
+  'autob.none': 'Una al día, se guardan 7 días · todavía no hay ninguna',
+  'autob.pick': 'Restaurar una copia automática',
+  'autob.pickBody': 'Elige cuál restaurar. Antes se guarda una copia de cómo están tus datos ahora, por si quieres volver atrás.',
+  'autob.emptyBody': 'Todavía no hay copias: la primera se guarda unos segundos después de abrir Clipsy con algún dato.',
+  'autob.item': '{date} · {n} elementos',
+  'autob.safety': 'Antes de restaurar · {date}',
+  'autob.folder': 'Abrir carpeta',
+  'autob.readFailed': 'No se pudo leer esa copia.',
 
   // Ayuda
   'more.help': 'Ayuda y preguntas frecuentes',

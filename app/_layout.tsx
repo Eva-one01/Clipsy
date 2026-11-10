@@ -11,6 +11,7 @@ import { DialogHost } from '@/components/DialogHost';
 import { TitleBar, titleBarHeight } from '@/components/TitleBar';
 import { UpdateBanner } from '@/components/UpdateBanner';
 import { auxWindow } from '@/desktop/auxWindow';
+import { useAutoBackup } from '@/desktop/autoBackup';
 import { useCrossWindowSync } from '@/desktop/crossWindow';
 import { useAutoSync } from '@/desktop/sync';
 import { useDesktopStateSync, useLicenseGate } from '@/desktop/licensing';
@@ -29,6 +30,7 @@ function RootStack() {
   useDesktopStateSync();
   const gate = useLicenseGate();
   useAutoSync(hydrated && gate === 'open');
+  useAutoBackup(hydrated);
 
   useNotificationRouting(hydrated);
   useDesktopIntegration(hydrated);

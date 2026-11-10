@@ -365,6 +365,16 @@ const fr: Dict = {
   'backup.restored': 'Sauvegarde restaurée',
   'backup.invalid': 'Ce fichier n’est pas une sauvegarde Clipsy valide.',
   'backup.exportFailed': 'Impossible d’exporter la sauvegarde. Réessayez.',
+  'autob.title': 'Sauvegardes automatiques',
+  'autob.sub': 'Une par jour, conservées 7 jours · dernière : {when}',
+  'autob.none': 'Une par jour, conservées 7 jours · aucune pour l’instant',
+  'autob.pick': 'Restaurer une sauvegarde automatique',
+  'autob.pickBody': 'Choisissez laquelle restaurer. Vos données actuelles sont d’abord sauvegardées, au cas où vous voudriez revenir en arrière.',
+  'autob.emptyBody': 'Pas encore de sauvegarde : la première est enregistrée quelques secondes après l’ouverture de Clipsy avec des données.',
+  'autob.item': '{date} · {n} éléments',
+  'autob.safety': 'Avant restauration · {date}',
+  'autob.folder': 'Ouvrir le dossier',
+  'autob.readFailed': 'Impossible de lire cette sauvegarde.',
 
   // Ayuda
   'more.help': 'Aide et questions fréquentes',

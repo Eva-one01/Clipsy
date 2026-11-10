@@ -15,6 +15,9 @@ import { ShortcutsCard } from '@/components/Shortcuts';
 import { languages } from '@/i18n';
 import { useT } from '@/i18n/useT';
 import { exportBackup, pickBackup, pickTextFile } from '@/lib/backup';
+import { parseBackup } from '@/lib/backupFormat';
+import { saveSafetyBackup } from '@/desktop/autoBackup';
+import type { AutoBackup } from '@/desktop/bridge';
 import { parseIcs } from '@/lib/ics';
 import { formatDateTime, formatLongDate } from '@/lib/date';
 import { showDialog } from '@/lib/dialog';
@@ -49,6 +52,11 @@ export default function SettingsScreen() {
       showDialog(t('set.import'), t('backup.invalid'));
       return;
     }
+    confirmRestore(res);
+  };
+
+  /** Confirma y restaura una copia ya leída; antes guarda el estado actual por si hay que volver atrás. */
+  const confirmRestore = (res: Extract<Awaited<ReturnType<typeof pickBackup>>, { status: 'ok' }>) => {
     const date = res.exportedAt ? formatLongDate(res.exportedAt) : '—';
     showDialog(t('backup.confirmTitle'), t('backup.confirmBody', { date, n: res.count }), [
       { text: t('common.cancel'), style: 'cancel' },
@@ -56,11 +64,46 @@ export default function SettingsScreen() {
         text: t('backup.confirm'),
         style: 'destructive',
         onPress: async () => {
+          await saveSafetyBackup();
           await importData(res.data);
           setBudgetText(useStore.getState().settings.monthlyBudget ? String(useStore.getState().settings.monthlyBudget) : '');
           showDialog(t('backup.restored'));
         },
       },
+    ]);
+  };
+
+  // Copias automáticas (escritorio): la más reciente se muestra en Ajustes; al pulsar, se elige cuál restaurar.
+  const [autoList, setAutoList] = useState<AutoBackup[] | null>(null);
+  useEffect(() => {
+    desktop?.backups?.list().then(setAutoList).catch(() => setAutoList([]));
+  }, []);
+  const lastDaily = autoList?.find((b) => b.kind === 'daily');
+  const autoSub = lastDaily ? t('autob.sub', { when: formatDateTime(lastDaily.savedAt, settings.use24h) }) : t('autob.none');
+
+  const openAutoBackups = async () => {
+    const list = (await desktop?.backups?.list().catch(() => [] as AutoBackup[])) ?? [];
+    setAutoList(list);
+    const items = list.slice(0, 10).map((b) => {
+      const when = formatDateTime(b.savedAt, settings.use24h);
+      const label = b.kind === 'safety' ? t('autob.safety', { date: when }) : t('autob.item', { date: when, n: b.count ?? '—' });
+      return {
+        text: label,
+        onPress: async () => {
+          const text = await desktop?.backups?.read(b.name).catch(() => null);
+          let res: ReturnType<typeof parseBackup> = { status: 'invalid' };
+          try {
+            if (text) res = parseBackup(JSON.parse(text));
+          } catch {}
+          if (res.status !== 'ok') return showDialog(t('autob.title'), t('autob.readFailed'));
+          confirmRestore(res);
+        },
+      };
+    });
+    showDialog(t('autob.pick'), list.length ? t('autob.pickBody') : t('autob.emptyBody'), [
+      ...items,
+      { text: t('autob.folder'), onPress: () => void desktop?.backups?.openFolder() },
+      { text: t('common.cancel'), style: 'cancel' as const },
     ]);
   };
 
@@ -194,6 +237,12 @@ export default function SettingsScreen() {
         <ListRow icon="upload" title={t('set.export')} subtitle={t('set.exportSub')} onPress={exportData} />
         <Divider inset={58} />
         <ListRow icon="download" title={t('set.import')} subtitle={t('set.importSub')} onPress={restoreData} />
+        {desktop?.backups ? (
+          <>
+            <Divider inset={58} />
+            <ListRow icon="clock" title={t('autob.title')} subtitle={autoSub} onPress={openAutoBackups} />
+          </>
+        ) : null}
         <Divider inset={58} />
         <ListRow icon="calendar" title={t('ics.title')} subtitle={t('ics.sub')} onPress={importIcs} />
         <Divider inset={58} />

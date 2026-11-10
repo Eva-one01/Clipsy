@@ -38,6 +38,15 @@ export type LicenseError =
   | 'generic'
   | string;
 
+export interface AutoBackup {
+  name: string;
+  /** daily: la copia del día; safety: el estado guardado justo antes de restaurar otra copia. */
+  kind: 'daily' | 'safety';
+  savedAt: number;
+  size: number;
+  count: number | null;
+}
+
 export type UpdateStatus = 'idle' | 'disabled' | 'checking' | 'none' | 'available' | 'downloading' | 'ready' | 'installing' | 'error';
 export interface UpdateState {
   status: UpdateStatus;
@@ -167,6 +176,14 @@ export interface RazorDesktop {
     getKey(): Promise<string | null>;
     setKey(b64: string): Promise<boolean>;
     clearKey(): Promise<boolean>;
+  };
+  /** Copias de seguridad automáticas (una al día, las 7 últimas) en la carpeta de datos. */
+  backups?: {
+    list(): Promise<AutoBackup[]>;
+    saveDaily(day: string, text: string): Promise<boolean>;
+    saveSafety(text: string): Promise<boolean>;
+    read(name: string): Promise<string | null>;
+    openFolder(): Promise<string>;
   };
   /** Informes de errores (Sentry). `available`: la copia tiene un DSN configurado. */
   errorReports?: {

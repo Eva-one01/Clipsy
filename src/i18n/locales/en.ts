@@ -365,6 +365,16 @@ const en: Dict = {
   'backup.restored': 'Backup restored',
   'backup.invalid': 'That file isn’t a valid Clipsy backup.',
   'backup.exportFailed': 'Couldn’t export the backup. Try again.',
+  'autob.title': 'Automatic backups',
+  'autob.sub': 'One a day, kept for 7 days · latest: {when}',
+  'autob.none': 'One a day, kept for 7 days · none yet',
+  'autob.pick': 'Restore an automatic backup',
+  'autob.pickBody': 'Choose which one to restore. Your current data is saved first, in case you want to go back.',
+  'autob.emptyBody': 'No backups yet: the first one is saved a few seconds after you open Clipsy with some data.',
+  'autob.item': '{date} · {n} items',
+  'autob.safety': 'Before restoring · {date}',
+  'autob.folder': 'Open folder',
+  'autob.readFailed': 'That backup couldn’t be read.',
 
   // Ayuda
   'more.help': 'Help and FAQ',

@@ -473,16 +473,17 @@ export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today:
               <Checkbox checked={!!it.done} onToggle={() => toggleTask(it.id)} label={it.title} size={13} color={it.priority === 2 ? c.danger : undefined} />
             </PView>
           ) : null}
-          <Text variant="caption" numberOfLines={h > 36 ? 2 : 1} style={{ flex: 1, fontWeight: '600', color: c.text, textDecorationLine: it.done ? 'line-through' : 'none' }}>
+          {/* Título en dos líneas solo si cabe también la hora debajo (bloques de más de una hora). */}
+          <Text variant="caption" numberOfLines={h > 64 ? 2 : 1} style={{ flex: 1, fontWeight: '600', color: c.text, textDecorationLine: it.done ? 'line-through' : 'none' }}>
             {it.title}
           </Text>
-          {h <= 30 && !p.resizing ? (
+          {h < 44 && !p.resizing ? (
             <Text variant="caption" tabular numberOfLines={1} style={{ color: c.textMuted, fontSize: 11 }}>
               {formatTime(minutesToTime(p.start), use24h)}
             </Text>
           ) : null}
         </View>
-        {h > 30 || p.resizing ? (
+        {h >= 44 || p.resizing ? (
           <Text variant="caption" tabular numberOfLines={1} style={{ color: c.textMuted, fontSize: 11 }}>
             {label}
           </Text>
@@ -490,7 +491,7 @@ export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today:
         {!isRem && !ghost ? (
           // Borde de abajo: se jala para alargar o acortar.
           <PView onPointerDown={(e: PE) => startDrag(it, e, 'resize')} accessibilityLabel={t('cal.resizeA11y')} style={[styles.resize, webResize]}>
-            {h > 30 ? <View style={[styles.grip, { backgroundColor: it.color, opacity: p.resizing ? 0.9 : 0.45 }]} /> : null}
+            {h > 64 || p.resizing ? <View style={[styles.grip, { backgroundColor: it.color, opacity: p.resizing ? 0.9 : 0.45 }]} /> : null}
           </PView>
         ) : null}
       </PView>

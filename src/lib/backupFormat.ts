@@ -2,7 +2,7 @@ import type { RazorData } from '@/store';
 
 /** Las copias antiguas (antes del cambio de nombre) se marcaban como 'Razor': se siguen aceptando. */
 const APPS = ['Clipsy', 'Clepsy', 'Razor'] as const;
-const LIST_KEYS = ['events', 'tasks', 'ideas', 'goals', 'alarms', 'reminders', 'clocks', 'transactions'] as const;
+const LIST_KEYS = ['events', 'tasks', 'ideas', 'goals', 'alarms', 'reminders', 'clocks', 'transactions', 'recurring'] as const;
 
 interface BackupFile {
   app: (typeof APPS)[number];

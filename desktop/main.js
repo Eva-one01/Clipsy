@@ -12,6 +12,7 @@ const sync = require('./sync');
 const voice = require('./voice');
 const importer = require('./importer');
 const shortcuts = require('./shortcuts');
+const backups = require('./backups');
 
 const APP_DIR = path.join(__dirname, 'app');
 const SCHEME = 'app';
@@ -515,6 +516,11 @@ function registerIpc() {
   ipcMain.handle('razor:errors:get', () => errors.get());
   ipcMain.handle('razor:errors:set', (_e, v) => errors.setEnabled(!!v));
   ipcMain.handle('razor:errors:test', () => errors.test());
+  ipcMain.handle('razor:backups:list', () => backups.list());
+  ipcMain.handle('razor:backups:saveDaily', (_e, day, text) => backups.saveDaily(day, text));
+  ipcMain.handle('razor:backups:saveSafety', (_e, text) => backups.saveSafety(text));
+  ipcMain.handle('razor:backups:read', (_e, name) => backups.read(name));
+  ipcMain.handle('razor:backups:openFolder', () => backups.openFolder());
   ipcMain.on('razor:update:download', () => updater.openDownloads());
   // Abre páginas de la web de Clipsy (comprar, recuperar contraseña, gestionar equipos).
   ipcMain.on('razor:open-site', (_e, where) => {
