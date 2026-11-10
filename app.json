@@ -3,7 +3,7 @@
     "name": "Clipsy",
     "slug": "razor",
     "scheme": "razor",
-    "version": "1.4.9",
+    "version": "1.4.10",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#0A0A0B",
