@@ -2,13 +2,14 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, FadeOut, LinearTransition } from 'react-native-reanimated';
+import { ClockFace, nextClockStyle } from '@/components/ClockFace';
 import { PressableScale } from '@/components/PressableScale';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
 import { Card, EmptyState, Icon, IconButton } from '@/components/ui';
 import { clockLabel } from '@/constants/cities';
 import { useT } from '@/i18n/useT';
-import { formatTime, splitTime } from '@/lib/date';
+import { formatTime } from '@/lib/date';
 import { showDialog } from '@/lib/dialog';
 import { dayRelation, dayRelationLabel, formatOffset, isNight, offsetFromLocal, zoned } from '@/lib/timezone';
 import { useNow } from '@/lib/useNow';
@@ -27,6 +28,7 @@ export default function Clocks() {
   const update = useStore((s) => s.updateClock);
   const setSettings = useStore((s) => s.setSettings);
   const primaryId = useStore((s) => s.settings.primaryClockId);
+  const defaultStyle = useStore((s) => s.settings.clockStyle ?? 'digital');
   const effectivePrimary = clocks.find((x) => x.id === primaryId)?.id ?? clocks[0]?.id;
   const [editing, setEditing] = useState(false);
 
@@ -77,7 +79,6 @@ export default function Clocks() {
             const name = clockLabel(cl, lang);
             const z = zoned(cl.tz, now);
             const hm = `${String(z.hour).padStart(2, '0')}:${String(z.minute).padStart(2, '0')}`;
-            const [main, suffix] = splitTime(hm, use24h);
             const rel = dayRelation(cl.tz, now);
             const night = isNight(cl.tz, now);
             const isPrimary = cl.id === effectivePrimary;
@@ -125,20 +126,16 @@ export default function Clocks() {
                       <IconButton icon="arrow-down" label={t('clocks.down')} size={34} onPress={() => move(cl.id, 1)} />
                     </View>
                   ) : (
-                    <View style={{ alignItems: 'flex-end' }} accessible accessibilityLabel={`${name}: ${formatTime(hm, use24h)}`}>
-                      <Text variant="numeric" tabular style={{ fontSize: 36, lineHeight: 40 }}>
-                        {main}
-                        {suffix ? (
-                          <Text variant="caption" tone="muted">
-                            {' '}
-                            {suffix}
-                          </Text>
-                        ) : null}
-                      </Text>
-                      <Text variant="caption" tone="faint" tabular>
-                        :{String(z.second).padStart(2, '0')}
-                      </Text>
-                    </View>
+                    // Tocar la hora cambia el estilo de este reloj (digital, analógico, fino, grueso).
+                    <PressableScale
+                      onPress={() => update(cl.id, { style: nextClockStyle(cl.style ?? defaultStyle) })}
+                      // Va dentro de la tarjeta (que ya es un botón): sin rol de botón para no anidar <button>.
+                      accessibilityRole="none"
+                      accessibilityLabel={`${name}: ${formatTime(hm, use24h)} · ${t('clocks.changeStyle')}`}
+                      scaleTo={0.95}
+                    >
+                      <ClockFace style={cl.style ?? defaultStyle} h={z.hour} m={z.minute} s={z.second} use24h={use24h} night={night} />
+                    </PressableScale>
                   )}
                 </Card>
                 </PressableScale>

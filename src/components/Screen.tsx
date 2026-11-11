@@ -27,6 +27,10 @@ interface ScreenProps {
   clocks?: boolean;
   /** Si se indica, el título se puede pulsar (con una flecha) para abrir un selector. */
   onTitlePress?: () => void;
+  /** Algo pequeño arriba a la izquierda, a la altura de los relojes (en «Hoy», el clima). */
+  corner?: ReactNode;
+  /** Título propio (p. ej. mes y año que se pueden elegir); `title` sigue usándose en la barra compacta. */
+  titleNode?: ReactNode;
   titleOpen?: boolean;
   titleHint?: string;
   /** Ancho máximo del contenido en escritorio (por defecto, ancho de lectura). */
@@ -37,7 +41,7 @@ interface ScreenProps {
  * Contenedor estándar: título grande que se desvanece hacia una barra compacta
  * al desplazarse, con márgenes y espacio para la barra de pestañas.
  */
-export function Screen({ title, subtitle, actions, children, tabbed, header, scroll = true, leading, clocks = true, onTitlePress, titleOpen, titleHint, maxWidth = CONTENT_MAX_WIDTH }: ScreenProps) {
+export function Screen({ title, subtitle, actions, children, tabbed, header, scroll = true, leading, clocks = true, onTitlePress, titleOpen, titleHint, corner, titleNode, maxWidth = CONTENT_MAX_WIDTH }: ScreenProps) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   const isDesktop = useIsDesktop();
@@ -67,7 +71,7 @@ export function Screen({ title, subtitle, actions, children, tabbed, header, scr
   // El título compacto se centra en el hueco libre entre el botón atrás y los relojes, sin taparse.
   const sideGap = Math.max(leading ? 52 : space.xl, showClocks ? clocksW + space.xl + space.sm : space.xl);
   // Con botón atrás los relojes comparten fila con él; sin él, se reserva una franja encima del título.
-  const clockBand = showClocks && !leading ? HEADER_CLOCKS_HEIGHT + space.sm : 0;
+  const clockBand = (showClocks || corner) && !leading ? HEADER_CLOCKS_HEIGHT + space.sm : 0;
   const topPad = (isDesktop ? space.xxxl : space.xl) + clockBand;
 
   const top = (
@@ -81,7 +85,9 @@ export function Screen({ title, subtitle, actions, children, tabbed, header, scr
                   {subtitle}
                 </Text>
               ) : null}
-              {onTitlePress ? (
+              {titleNode ? (
+                titleNode
+              ) : onTitlePress ? (
                 <Pressable
                   onPress={onTitlePress}
                   accessibilityRole="button"
@@ -135,6 +141,14 @@ export function Screen({ title, subtitle, actions, children, tabbed, header, scr
             <View onLayout={(e) => setClocksW(Math.round(e.nativeEvent.layout.width))}>
               <HeaderClocks />
             </View>
+          </View>
+        </View>
+      ) : null}
+
+      {corner && !leading ? (
+        <View pointerEvents="box-none" style={[styles.clocks, { top: clocksTop }]}>
+          <View pointerEvents="box-none" style={[{ width: '100%', paddingHorizontal: space.xl, alignItems: 'flex-start' }, column]}>
+            {corner}
           </View>
         </View>
       ) : null}

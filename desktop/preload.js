@@ -39,6 +39,8 @@ contextBridge.exposeInMainWorld('razorDesktop', {
     ipcRenderer.on('razor:quick-voice', h);
     return () => ipcRenderer.removeListener('razor:quick-voice', h);
   },
+  // Clima: { source: 'auto' } (ubicación de Windows) o { source: 'city', lat, lon }.
+  weather: { get: (opts) => ipcRenderer.invoke('razor:weather:get', opts || {}) },
   importer: {
     // Abre el diálogo del sistema; el archivo se lee en el equipo y vuelve como filas de texto.
     pick: (lang) => ipcRenderer.invoke('razor:import:pick', String(lang || '')),

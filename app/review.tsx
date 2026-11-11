@@ -158,7 +158,7 @@ export default function Review() {
       </Card>
 
       {newIdeas > 0 && (
-        <PressableScale onPress={() => router.navigate('/lists')} style={{ marginTop: space.md }}>
+        <PressableScale onPress={() => router.navigate('/ideas')} style={{ marginTop: space.md }}>
           <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
             <Icon name="zap" size={16} color={c.accent} />
             <Text variant="body" style={{ flex: 1 }}>

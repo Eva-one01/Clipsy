@@ -18,7 +18,10 @@ import { useDesktopStateSync, useLicenseGate } from '@/desktop/licensing';
 import { useDesktopIntegration } from '@/desktop/useDesktopIntegration';
 import { configureNotifications, useNotificationRouting } from '@/lib/notifications';
 import { useStore } from '@/store';
+import { installFonts } from '@/theme/fonts';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
+
+installFonts();
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 SplashScreen.setOptions({ duration: 300, fade: true });

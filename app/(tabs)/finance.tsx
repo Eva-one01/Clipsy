@@ -9,6 +9,7 @@ import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
 import { Card, Divider, EmptyState, Icon, IconButton, ProgressBar, SectionHeader } from '@/components/ui';
 import { categoryLabel, expenseCategories, findCategory } from '@/constants/finance';
+import { useIsDesktop } from '@/desktop/layout';
 import { useT } from '@/i18n/useT';
 import { addMonths, formatMonthTitle, fromKey, relativeDay } from '@/lib/date';
 import { formatMoney } from '@/lib/money';
@@ -19,6 +20,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { chartColors, motion, radius, space } from '@/theme/tokens';
 
 export default function Finance() {
+  const isDesktop = useIsDesktop();
   const { c, scheme } = useTheme();
   const { t } = useT();
   const [selected, setSelected] = useState<string | null>(null);
@@ -109,6 +111,7 @@ export default function Finance() {
   return (
     <Screen
       tabbed
+      maxWidth={isDesktop ? 1240 : undefined}
       title={t('fin.title')}
       subtitle={formatMonthTitle(month)}
       actions={
@@ -119,251 +122,257 @@ export default function Finance() {
         </>
       }
     >
-      <Animated.View key={prefix} entering={FadeInDown.duration(motion.slow)}>
-        <Card style={{ gap: space.lg }}>
-          {/* El balance del mes es el que el usuario fija en Ajustes; ingresos y gastos van aparte. */}
-          <PressableScale
-            onPress={() => router.push('/settings')}
-            scaleTo={0.99}
-            accessibilityRole="button"
-            accessibilityHint={t('fin.balanceHint', { x: formatMoney(budget, currency) })}
-            style={{ alignSelf: 'flex-start', maxWidth: '100%' }}
-          >
-            <Text variant="label" tone="faint" upper>
-              {t('fin.balance')}
-            </Text>
-            <Text
-              variant="numeric"
-              tabular
-              adjustsFontSizeToFit
-              numberOfLines={1}
-              style={{ marginTop: 4, color: balance < 0 ? c.danger : funds > 0 || expense > 0 ? c.text : c.textFaint }}
-            >
-              {funds > 0 || expense > 0 ? formatMoney(balance, currency) : '—'}
-            </Text>
-            <Text variant="caption" tone="faint" style={{ marginTop: 2 }}>
-              {budget > 0 ? t('fin.balanceHint', { x: formatMoney(budget, currency) }) : t('fin.setBudget')}
-            </Text>
-          </PressableScale>
-          <View style={{ flexDirection: 'row', gap: space.md }}>
-            <Stat label={t('fin.income')} value={formatMoney(income, currency)} icon="arrow-down-left" color={c.success} />
-            <Stat label={t('fin.expenses')} value={formatMoney(expense, currency)} icon="arrow-up-right" color={c.danger} />
-          </View>
-          {funds > 0 && (
-            <View style={{ gap: space.sm }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text variant="caption" tone="muted">
-                  {t('fin.budget')}
-                </Text>
-                <Text variant="caption" tabular style={{ color: budgetColor }}>
-                  {formatMoney(expense, currency, { compact: true })} / {formatMoney(funds, currency, { compact: true })}
-                </Text>
-              </View>
-              <ProgressBar value={budgetRatio} color={budgetColor} />
-              <Text variant="caption" tone="faint">
-                {budgetRatio >= 1
-                  ? t('fin.over', { x: formatMoney(-balance, currency) })
-                  : t('fin.left', { x: formatMoney(balance, currency) })}
-              </Text>
-            </View>
-          )}
-        </Card>
-      </Animated.View>
-
-
-      {(
-        <>
-          <SectionHeader title={t('fin.where')} />
-          <Animated.View key={`chart-${prefix}`} entering={FadeInDown.delay(80).duration(motion.slow)}>
+      <View style={isDesktop ? styles.columns : undefined}>
+        <View style={isDesktop ? { flex: 1, minWidth: 0 } : undefined}>
+          <Animated.View key={prefix} entering={FadeInDown.duration(motion.slow)}>
             <Card style={{ gap: space.lg }}>
-              <View style={{ alignItems: 'center', paddingTop: space.sm }}>
-                <DonutChart
-                  animationKey={prefix}
-                  selected={selected}
-                  slices={byCategory.map((x) => ({ key: x.key, value: x.amount / scale, color: x.color }))}
-                  accessibilityLabel={`${t('fin.chartTitle')}: ${byCategory
-                    .map((x) => `${categoryLabel(x.key)} ${pctOf(x.amount)}%`)
-                    .join(', ')}. ${t('fin.available')} ${formatMoney(available, currency)}`}
+              {/* El balance del mes es el que el usuario fija en Ajustes; ingresos y gastos van aparte. */}
+              <PressableScale
+                onPress={() => router.push('/settings')}
+                scaleTo={0.99}
+                accessibilityRole="button"
+                accessibilityHint={t('fin.balanceHint', { x: formatMoney(budget, currency) })}
+                style={{ alignSelf: 'flex-start', maxWidth: '100%' }}
+              >
+                <Text variant="label" tone="faint" upper>
+                  {t('fin.balance')}
+                </Text>
+                <Text
+                  variant="numeric"
+                  tabular
+                  adjustsFontSizeToFit
+                  numberOfLines={1}
+                  style={{ marginTop: 4, color: balance < 0 ? c.danger : funds > 0 || expense > 0 ? c.text : c.textFaint }}
                 >
-                  <View style={{ alignItems: 'center', maxWidth: 120 }}>
-                    <Text variant="numeric" tabular style={{ fontSize: 30, lineHeight: 34, color: over && !sel ? c.danger : c.text }}>
-                      {pctOf(sel ? sel.amount : expense)}%
+                  {funds > 0 || expense > 0 ? formatMoney(balance, currency) : '—'}
+                </Text>
+                <Text variant="caption" tone="faint" style={{ marginTop: 2 }}>
+                  {budget > 0 ? t('fin.balanceHint', { x: formatMoney(budget, currency) }) : t('fin.setBudget')}
+                </Text>
+              </PressableScale>
+              <View style={{ flexDirection: 'row', gap: space.md }}>
+                <Stat label={t('fin.income')} value={formatMoney(income, currency)} icon="arrow-down-left" color={c.success} />
+                <Stat label={t('fin.expenses')} value={formatMoney(expense, currency)} icon="arrow-up-right" color={c.danger} />
+              </View>
+              {funds > 0 && (
+                <View style={{ gap: space.sm }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text variant="caption" tone="muted">
+                      {t('fin.budget')}
                     </Text>
-                    <Text variant="caption" tone="muted" numberOfLines={1}>
-                      {sel ? categoryLabel(sel.key) : t('fin.spent')}
-                    </Text>
-                    <Text variant="caption" tone="faint" numberOfLines={1}>
-                      {baseLabel}
+                    <Text variant="caption" tabular style={{ color: budgetColor }}>
+                      {formatMoney(expense, currency, { compact: true })} / {formatMoney(funds, currency, { compact: true })}
                     </Text>
                   </View>
-                </DonutChart>
-              </View>
-
-              <View style={{ gap: 2 }}>
-                {byCategory.map((x) => {
-                  const cat = findCategory(x.key);
-                  const active = selected === x.key;
-                  return (
-                    <PressableScale
-                      key={x.key}
-                      scaleTo={0.985}
-                      onPress={() => {
-                        setSelected(active ? null : x.key);
-                      }}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: active }}
-                      style={[styles.legendRow, { backgroundColor: active ? c.surfaceAlt : 'transparent', opacity: selected && !active ? 0.55 : 1 }]}
-                    >
-                      <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: x.color }} />
-                      <Icon name={cat.icon} size={14} color={c.textMuted} />
-                      <Text variant="caption" style={{ flex: 1 }} numberOfLines={1}>
-                        {categoryLabel(x.key)}
-                      </Text>
-                      <Text variant="caption" tone="muted" tabular>
-                        {formatMoney(x.amount, currency)}
-                      </Text>
-                      <Text variant="caption" tabular style={{ width: 44, textAlign: 'right', fontWeight: '600' }}>
-                        {pctOf(x.amount)}%
-                      </Text>
-                    </PressableScale>
-                  );
-                })}
-                {byCategory.length === 0 && (
-                  <Text variant="caption" tone="muted" align="center" style={{ marginBottom: space.xs }}>
-                    {t('fin.noSpend')}
-                  </Text>
-                )}
-                {available > 0 && (
-                  <View style={styles.legendRow}>
-                    <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: c.surfaceAlt, borderWidth: 1, borderColor: c.borderStrong }} />
-                    <Icon name="check-circle" size={14} color={c.textMuted} />
-                    <Text variant="caption" style={{ flex: 1 }}>
-                      {t('fin.available')}
-                    </Text>
-                    <Text variant="caption" tone="muted" tabular>
-                      {formatMoney(available, currency)}
-                    </Text>
-                    <Text variant="caption" tabular style={{ width: 44, textAlign: 'right', fontWeight: '600' }}>
-                      {pctOf(available)}%
-                    </Text>
-                  </View>
-                )}
-              </View>
-
-              {over && base > 0 && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-                  <Icon name="alert-triangle" size={14} color={funds > 0 ? c.danger : c.warning} />
-                  <Text variant="caption" tone="muted" style={{ flex: 1 }}>
-                    {funds > 0 ? t('fin.over', { x: formatMoney(expense - base, currency) }) : t('fin.overBase', { x: formatMoney(expense - base, currency) })}
+                  <ProgressBar value={budgetRatio} color={budgetColor} />
+                  <Text variant="caption" tone="faint">
+                    {budgetRatio >= 1
+                      ? t('fin.over', { x: formatMoney(-balance, currency) })
+                      : t('fin.left', { x: formatMoney(balance, currency) })}
                   </Text>
                 </View>
               )}
             </Card>
           </Animated.View>
-        </>
-      )}
 
-      <SectionHeader title={t('bud.section')} action={t('common.edit')} onAction={() => router.push('/form/budgets')} />
-      <Card style={{ gap: space.md }}>
-        {limitRows.length === 0 ? (
-          <PressableScale onPress={() => router.push('/form/budgets')} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-            <Icon name="sliders" size={16} color={c.textMuted} />
-            <Text variant="caption" tone="muted" style={{ flex: 1 }}>
-              {t('bud.empty')}
-            </Text>
-            <Icon name="chevron-right" size={16} color={c.textFaint} />
-          </PressableScale>
-        ) : (
-          limitRows.map((r) => {
-            const ratio = r.spent / r.limit;
-            const col = ratio >= 1 ? c.danger : ratio >= 0.8 ? c.warning : c.accent;
-            return (
-              <View key={r.key} style={{ gap: 6 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-                  <Icon name={findCategory(r.key).icon} size={14} color={c.textMuted} />
-                  <Text variant="caption" style={{ flex: 1 }} numberOfLines={1}>
-                    {categoryLabel(r.key)}
-                  </Text>
-                  <Text variant="caption" tabular style={{ color: ratio >= 0.8 ? col : c.textMuted }}>
-                    {formatMoney(r.spent, currency, { compact: true })} / {formatMoney(r.limit, currency, { compact: true })}
-                  </Text>
-                </View>
-                <ProgressBar value={Math.min(1, ratio)} color={col} height={5} />
-              </View>
-            );
-          })
-        )}
-      </Card>
 
-      <SectionHeader title={t('rec.section')} action={t('rec.add')} onAction={() => router.push('/form/recurring')} />
-      <Card padded={false}>
-        {recurring.length === 0 ? (
-          <PressableScale onPress={() => router.push('/form/recurring')} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, padding: space.lg }}>
-            <Icon name="repeat" size={16} color={c.textMuted} />
-            <Text variant="caption" tone="muted" style={{ flex: 1 }}>
-              {t('rec.empty')}
-            </Text>
-            <Icon name="chevron-right" size={16} color={c.textFaint} />
-          </PressableScale>
-        ) : (
-          recurring.map((r, i) => (
-            <View key={r.id}>
-              {i > 0 && <Divider inset={58} />}
-              <RecurringRow r={r} currency={currency} />
-            </View>
-          ))
-        )}
-      </Card>
-      {recurring.length > 0 && (
-        <Text variant="caption" tone="faint" style={{ marginTop: space.sm }}>
-          {t('rec.totals', { i: formatMoney(fixedIncome, currency), e: formatMoney(fixedExpense, currency) })}
-        </Text>
-      )}
+          {(
+            <>
+              <SectionHeader title={t('fin.where')} />
+              <Animated.View key={`chart-${prefix}`} entering={FadeInDown.delay(80).duration(motion.slow)}>
+                <Card style={{ gap: space.lg }}>
+                  <View style={{ alignItems: 'center', paddingTop: space.sm }}>
+                    <DonutChart
+                      animationKey={prefix}
+                      selected={selected}
+                      slices={byCategory.map((x) => ({ key: x.key, value: x.amount / scale, color: x.color }))}
+                      accessibilityLabel={`${t('fin.chartTitle')}: ${byCategory
+                        .map((x) => `${categoryLabel(x.key)} ${pctOf(x.amount)}%`)
+                        .join(', ')}. ${t('fin.available')} ${formatMoney(available, currency)}`}
+                    >
+                      <View style={{ alignItems: 'center', maxWidth: 120 }}>
+                        <Text variant="numeric" tabular style={{ fontSize: 30, lineHeight: 34, color: over && !sel ? c.danger : c.text }}>
+                          {pctOf(sel ? sel.amount : expense)}%
+                        </Text>
+                        <Text variant="caption" tone="muted" numberOfLines={1}>
+                          {sel ? categoryLabel(sel.key) : t('fin.spent')}
+                        </Text>
+                        <Text variant="caption" tone="faint" numberOfLines={1}>
+                          {baseLabel}
+                        </Text>
+                      </View>
+                    </DonutChart>
+                  </View>
 
-      <SectionHeader title={t('fin.trend')} />
-      <Card>
-        <MonthsChart
-          transactions={txs}
-          month={month}
-          currency={currency}
-          onSelect={(d) => {
-            setSelected(null);
-            setMonth(new Date(d.getFullYear(), d.getMonth(), 1));
-          }}
-        />
-      </Card>
+                  <View style={{ gap: 2 }}>
+                    {byCategory.map((x) => {
+                      const cat = findCategory(x.key);
+                      const active = selected === x.key;
+                      return (
+                        <PressableScale
+                          key={x.key}
+                          scaleTo={0.985}
+                          onPress={() => {
+                            setSelected(active ? null : x.key);
+                          }}
+                          accessibilityRole="button"
+                          accessibilityState={{ selected: active }}
+                          style={[styles.legendRow, { backgroundColor: active ? c.surfaceAlt : 'transparent', opacity: selected && !active ? 0.55 : 1 }]}
+                        >
+                          <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: x.color }} />
+                          <Icon name={cat.icon} size={14} color={c.textMuted} />
+                          <Text variant="caption" style={{ flex: 1 }} numberOfLines={1}>
+                            {categoryLabel(x.key)}
+                          </Text>
+                          <Text variant="caption" tone="muted" tabular>
+                            {formatMoney(x.amount, currency)}
+                          </Text>
+                          <Text variant="caption" tabular style={{ width: 44, textAlign: 'right', fontWeight: '600' }}>
+                            {pctOf(x.amount)}%
+                          </Text>
+                        </PressableScale>
+                      );
+                    })}
+                    {byCategory.length === 0 && (
+                      <Text variant="caption" tone="muted" align="center" style={{ marginBottom: space.xs }}>
+                        {t('fin.noSpend')}
+                      </Text>
+                    )}
+                    {available > 0 && (
+                      <View style={styles.legendRow}>
+                        <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: c.surfaceAlt, borderWidth: 1, borderColor: c.borderStrong }} />
+                        <Icon name="check-circle" size={14} color={c.textMuted} />
+                        <Text variant="caption" style={{ flex: 1 }}>
+                          {t('fin.available')}
+                        </Text>
+                        <Text variant="caption" tone="muted" tabular>
+                          {formatMoney(available, currency)}
+                        </Text>
+                        <Text variant="caption" tabular style={{ width: 44, textAlign: 'right', fontWeight: '600' }}>
+                          {pctOf(available)}%
+                        </Text>
+                      </View>
+                    )}
+                  </View>
 
-      <SectionHeader title={t('fin.movements')} />
-      {grouped.length === 0 ? (
-        <EmptyState
-          icon="credit-card"
-          title={t('fin.emptyTitle')}
-          subtitle={t('fin.emptyBody')}
-          action={t('fin.record')}
-          onAction={() => router.push('/form/transaction')}
-        />
-      ) : (
-        grouped.map((g, gi) => (
-          <Animated.View key={g.date} entering={FadeInDown.delay(Math.min(gi, 6) * 40)} layout={LinearTransition} style={{ marginBottom: space.md }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: space.xs }}>
-              <Text variant="caption" tone="muted">
-                {relativeDay(g.date)} · {fromKey(g.date).getDate()}
-              </Text>
-              <Text variant="caption" tone="faint" tabular>
-                {formatMoney(g.total, currency, { sign: true })}
-              </Text>
-            </View>
-            <Card padded={false}>
-              {g.items.map((x, i) => (
-                <View key={x.id}>
+                  {over && base > 0 && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+                      <Icon name="alert-triangle" size={14} color={funds > 0 ? c.danger : c.warning} />
+                      <Text variant="caption" tone="muted" style={{ flex: 1 }}>
+                        {funds > 0 ? t('fin.over', { x: formatMoney(expense - base, currency) }) : t('fin.overBase', { x: formatMoney(expense - base, currency) })}
+                      </Text>
+                    </View>
+                  )}
+                </Card>
+              </Animated.View>
+            </>
+          )}
+
+          <SectionHeader title={t('rec.section')} action={t('rec.add')} onAction={() => router.push('/form/recurring')} />
+          <Card padded={false}>
+            {recurring.length === 0 ? (
+              <PressableScale onPress={() => router.push('/form/recurring')} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, padding: space.lg }}>
+                <Icon name="repeat" size={16} color={c.textMuted} />
+                <Text variant="caption" tone="muted" style={{ flex: 1 }}>
+                  {t('rec.empty')}
+                </Text>
+                <Icon name="chevron-right" size={16} color={c.textFaint} />
+              </PressableScale>
+            ) : (
+              recurring.map((r, i) => (
+                <View key={r.id}>
                   {i > 0 && <Divider inset={58} />}
-                  <TxRow tx={x} currency={currency} />
+                  <RecurringRow r={r} currency={currency} />
                 </View>
-              ))}
-            </Card>
-          </Animated.View>
-        ))
-      )}
+              ))
+            )}
+          </Card>
+          {recurring.length > 0 && (
+            <Text variant="caption" tone="faint" style={{ marginTop: space.sm }}>
+              {t('rec.totals', { i: formatMoney(fixedIncome, currency), e: formatMoney(fixedExpense, currency) })}
+            </Text>
+          )}
+
+          <SectionHeader title={t('fin.trend')} />
+          <Card>
+            <MonthsChart
+              transactions={txs}
+              month={month}
+              currency={currency}
+              onSelect={(d) => {
+                setSelected(null);
+                setMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+              }}
+            />
+          </Card>
+
+          <SectionHeader title={t('fin.movements')} />
+          {grouped.length === 0 ? (
+            <EmptyState
+              icon="credit-card"
+              title={t('fin.emptyTitle')}
+              subtitle={t('fin.emptyBody')}
+              action={t('fin.record')}
+              onAction={() => router.push('/form/transaction')}
+            />
+          ) : (
+            grouped.map((g, gi) => (
+              <Animated.View key={g.date} entering={FadeInDown.delay(Math.min(gi, 6) * 40)} layout={LinearTransition} style={{ marginBottom: space.md }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: space.xs }}>
+                  <Text variant="caption" tone="muted">
+                    {relativeDay(g.date)} · {fromKey(g.date).getDate()}
+                  </Text>
+                  <Text variant="caption" tone="faint" tabular>
+                    {formatMoney(g.total, currency, { sign: true })}
+                  </Text>
+                </View>
+                <Card padded={false}>
+                  {g.items.map((x, i) => (
+                    <View key={x.id}>
+                      {i > 0 && <Divider inset={58} />}
+                      <TxRow tx={x} currency={currency} />
+                    </View>
+                  ))}
+                </Card>
+              </Animated.View>
+            ))
+          )}
+        </View>
+        {/* Límites por categoría: siempre a la vista (columna fija a la derecha en escritorio). */}
+        <View style={isDesktop ? styles.side : undefined}>
+          <SectionHeader title={t('bud.section')} action={t('common.edit')} onAction={() => router.push('/form/budgets')} />
+          <Card style={{ gap: space.md }}>
+            {limitRows.length === 0 ? (
+              <PressableScale onPress={() => router.push('/form/budgets')} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+                <Icon name="sliders" size={16} color={c.textMuted} />
+                <Text variant="caption" tone="muted" style={{ flex: 1 }}>
+                  {t('bud.empty')}
+                </Text>
+                <Icon name="chevron-right" size={16} color={c.textFaint} />
+              </PressableScale>
+            ) : (
+              limitRows.map((r) => {
+                const ratio = r.spent / r.limit;
+                const col = ratio >= 1 ? c.danger : ratio >= 0.8 ? c.warning : c.accent;
+                return (
+                  <View key={r.key} style={{ gap: 6 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+                      <Icon name={findCategory(r.key).icon} size={14} color={c.textMuted} />
+                      <Text variant="caption" style={{ flex: 1 }} numberOfLines={1}>
+                        {categoryLabel(r.key)}
+                      </Text>
+                      <Text variant="caption" tabular style={{ color: ratio >= 0.8 ? col : c.textMuted }}>
+                        {formatMoney(r.spent, currency, { compact: true })} / {formatMoney(r.limit, currency, { compact: true })}
+                      </Text>
+                    </View>
+                    <ProgressBar value={Math.min(1, ratio)} color={col} height={5} />
+                  </View>
+                );
+              })
+            )}
+          </Card>
+        </View>
+      </View>
     </Screen>
   );
 }
@@ -456,5 +465,8 @@ function RecurringRow({ r, currency }: { r: RecurringTx; currency: string }) {
 }
 
 const styles = StyleSheet.create({
+  columns: { flexDirection: 'row', alignItems: 'flex-start', gap: space.xl },
+  // position: sticky (web): la columna se queda visible mientras se desplaza el resto.
+  side: { width: 330, position: 'sticky' as 'relative', top: 0 },
   legendRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 36, paddingHorizontal: space.sm, borderRadius: radius.sm },
 });

@@ -14,8 +14,10 @@ const DEFAULTS = {
   'nav:index': 'CommandOrControl+1',
   'nav:calendar': 'CommandOrControl+2',
   'nav:lists': 'CommandOrControl+3',
-  'nav:finance': 'CommandOrControl+4',
-  'nav:more': 'CommandOrControl+5',
+  'nav:ideas': 'CommandOrControl+4',
+  'nav:goals': 'CommandOrControl+5',
+  'nav:finance': 'CommandOrControl+6',
+  'nav:more': 'CommandOrControl+7',
   'open:settings': 'CommandOrControl+,',
 };
 const GLOBAL = new Set(['quick', 'voice']);

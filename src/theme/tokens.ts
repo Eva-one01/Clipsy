@@ -1,3 +1,4 @@
+import { FONT } from './fonts';
 /**
  * Clipsy design tokens.
  * Concepto: precisión. Superficies neutras, líneas finas, un solo acento,
@@ -137,15 +138,17 @@ export const radius = {
   pill: 999,
 } as const;
 
+// Letra grande, gruesa y amable (Nunito): se lee de un vistazo y también a distancia.
+const F = { fontFamily: FONT };
 export const type = {
-  display: { fontSize: 34, lineHeight: 40, fontWeight: '700' as const, letterSpacing: -0.8 },
-  title: { fontSize: 24, lineHeight: 30, fontWeight: '700' as const, letterSpacing: -0.4 },
-  heading: { fontSize: 17, lineHeight: 22, fontWeight: '600' as const, letterSpacing: -0.2 },
-  body: { fontSize: 15, lineHeight: 21, fontWeight: '400' as const, letterSpacing: -0.1 },
-  bodyStrong: { fontSize: 15, lineHeight: 21, fontWeight: '600' as const, letterSpacing: -0.1 },
-  caption: { fontSize: 13, lineHeight: 17, fontWeight: '500' as const, letterSpacing: 0 },
-  label: { fontSize: 11, lineHeight: 14, fontWeight: '600' as const, letterSpacing: 0.8 },
-  numeric: { fontSize: 40, lineHeight: 44, fontWeight: '300' as const, letterSpacing: -1.5 },
+  display: { ...F, fontSize: 38, lineHeight: 46, fontWeight: '900' as const, letterSpacing: -0.6 },
+  title: { ...F, fontSize: 27, lineHeight: 34, fontWeight: '800' as const, letterSpacing: -0.3 },
+  heading: { ...F, fontSize: 19, lineHeight: 25, fontWeight: '800' as const, letterSpacing: -0.1 },
+  body: { ...F, fontSize: 17, lineHeight: 24, fontWeight: '600' as const, letterSpacing: 0 },
+  bodyStrong: { ...F, fontSize: 17, lineHeight: 24, fontWeight: '800' as const, letterSpacing: 0 },
+  caption: { ...F, fontSize: 14.5, lineHeight: 19, fontWeight: '600' as const, letterSpacing: 0 },
+  label: { ...F, fontSize: 12.5, lineHeight: 16, fontWeight: '800' as const, letterSpacing: 0.8 },
+  numeric: { ...F, fontSize: 44, lineHeight: 50, fontWeight: '500' as const, letterSpacing: -1 },
 } as const;
 
 export type TypeVariant = keyof typeof type;

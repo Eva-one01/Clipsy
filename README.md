@@ -76,6 +76,10 @@ assets/images/           Icono y favicon
 **Dictado por voz (Windows)**: `Ctrl+Shift+D` («D» de dictar) desde cualquier programa (o el micrófono junto a «Nueva tarea» o en la barra rápida) abre la barra escuchando. Al callar, lo dicho se escribe en el campo y se guarda solo al momento, salvo que lo corrijas o pulses Esc. Ejemplos: «recuérdame llamar a Juan en 20 minutos», «pon una alarma a las 6 y media», «gasté 35 mil en almuerzo».
 
 **Importar** (barra lateral, encima de Ayuda): trae la rutina, el horario, la agenda, las tareas o las finanzas que la persona ya tiene en un Excel (.xlsx), CSV, Word (.docx), PDF, texto o una foto. El archivo se lee en el equipo (`desktop/importer.js`; fotos y PDF con el reconocedor de texto de Windows, `desktop/ocr.ps1`), no se guarda, y lo que se entendió (`src/lib/importParse.ts`) se muestra para revisarlo antes de añadirlo. Pruebas: `npm run test:import`.
+
+**Clima** (Hoy, arriba a la izquierda): desactivado hasta que la persona lo pide. Usa la ubicación de Windows (`desktop/weather.js`, redondeada a ~1 km) o una ciudad de la lista, y pide el pronóstico a MET Norway (api.met.no, gratis también para uso comercial, con atribución). Es lo único que se envía.
+
+**Estilo** (gota junto al logo): tema, color, tamaño de letra y estilo de los relojes. La letra es Nunito (SIL OFL, `public/fonts/`), incluida en la app.
 - El audio se pasa a texto **en el equipo** con [whisper.cpp](https://github.com/ggml-org/whisper.cpp) (`desktop/voice.js`) y nunca sale de él.
 - El motor y el modelo `ggml-base-q5_1` (unos 70 MB) **no van en el instalador**. Se descargan una sola vez cuando la persona activa la voz, desde GitHub y Hugging Face, y se comprueba su SHA-256 antes de usarlos. Quedan en `%APPDATA%\Razor\voice` y se pueden quitar desde *Ajustes → Escritorio*.
 - Para cambiar de versión o de modelo, actualiza la URL, el tamaño y el SHA-256 en `desktop/voice.js`.

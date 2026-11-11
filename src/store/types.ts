@@ -92,6 +92,8 @@ export interface WorldClock {
   city: string;
   /** ID de la lista curada: permite mostrar el nombre en cada idioma */
   cityId?: string;
+  /** Estilo propio de este reloj (si no, el de Ajustes → Estilo). Se cambia tocando la hora. */
+  style?: ClockStyle;
   /** Visible siempre en la esquina superior derecha (además del principal). */
   pinned?: boolean;
 }
@@ -147,4 +149,12 @@ export interface Settings {
   budgetAlerts?: string[];
   /** Fecha de la última revisión semanal completada. */
   lastReview?: DateKey | null;
+  /** Tamaño de la letra: 1 normal, 1.12 grande, 1.25 muy grande (para leer de lejos). */
+  textScale?: number;
+  /** Cómo se ven los relojes de la cabecera y de Relojes. */
+  clockStyle?: ClockStyle;
+  /** Clima (Hoy): activado y de dónde. Ver desktop/weather.js. */
+  weather?: { enabled: boolean; source: 'auto' | 'city'; cityId?: string | null } | null;
 }
+
+export type ClockStyle = 'digital' | 'analog' | 'minimal' | 'bold';

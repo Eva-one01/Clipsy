@@ -35,6 +35,8 @@ const routes: Record<MenuAction, () => void> = {
   'nav:index': () => router.navigate('/'),
   'nav:calendar': () => router.navigate('/calendar'),
   'nav:lists': () => router.navigate('/lists'),
+  'nav:ideas': () => router.navigate('/ideas'),
+  'nav:goals': () => router.navigate('/goals'),
   'nav:finance': () => router.navigate('/finance'),
   'nav:more': () => router.navigate('/more'),
   'new:task': () => router.push('/form/task'),
