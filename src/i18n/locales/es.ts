@@ -357,7 +357,7 @@ const es = {
   'legal.p2.h': 'Dónde se guarda tu información',
   'legal.p2.b': 'Todo lo que escribes (eventos, tareas, ideas, objetivos, alarmas, recordatorios, relojes y movimientos financieros) se guarda en este equipo. Si activas la sincronización, viaja cifrado de extremo a extremo y nadie más que tú puede leerlo.',
   'legal.p3.h': 'Conexión a internet',
-  'legal.p3.b': 'Clipsy funciona sin conexión. Solo se conecta para validar tu licencia (al activarla y después como mucho una vez al día), para buscar actualizaciones y, si están activados, para enviar informes de errores. Si activas la sincronización, tus datos viajan cifrados de extremo a extremo con una frase que solo tú conoces: nuestro servidor no puede leerlos.',
+  'legal.p3.b': 'Clipsy funciona sin conexión. Solo se conecta para validar tu licencia (al activarla y después como mucho una vez al día), para buscar actualizaciones y, si están activados, para enviar informes de errores. Si activas la sincronización, tus datos viajan cifrados de extremo a extremo con una frase que solo tú conoces: nuestro servidor no puede leerlos. Si activas el clima en Hoy, se envía tu ubicación aproximada (redondeada a 1 km, sin ningún identificador) al Instituto Meteorológico de Noruega (MET Norway) para obtener el pronóstico.',
   'legal.p4.h': 'Notificaciones',
   'legal.p4.b': 'Si das permiso, la app muestra notificaciones del sistema en este equipo para alarmas y recordatorios. No se usan notificaciones push remotas.',
   'legal.p5.h': 'Control de tus datos',

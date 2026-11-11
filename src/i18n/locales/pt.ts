@@ -333,7 +333,7 @@ const pt: Dict = {
   'legal.p2.h': 'Onde suas informações ficam',
   'legal.p2.b': 'Tudo o que você escreve (eventos, tarefas, ideias, metas, alarmes, lembretes, relógios e movimentações) é salvo neste computador. Se ativar a sincronização, viaja com criptografia de ponta a ponta e só você pode lê-lo.',
   'legal.p3.h': 'Conexão com a internet',
-  'legal.p3.b': 'O Clipsy funciona offline. Só se conecta para validar a licença (ao ativá-la e depois no máximo uma vez por dia), buscar atualizações e, se estiverem ativados, enviar relatórios de erro. Se você ativar a sincronização, seus dados viajam com criptografia de ponta a ponta com uma frase que só você conhece: nosso servidor não consegue lê-los.',
+  'legal.p3.b': 'O Clipsy funciona offline. Só se conecta para validar a licença (ao ativá-la e depois no máximo uma vez por dia), buscar atualizações e, se estiverem ativados, enviar relatórios de erro. Se você ativar a sincronização, seus dados viajam com criptografia de ponta a ponta com uma frase que só você conhece: nosso servidor não consegue lê-los. Se você ativar o clima em Hoje, sua localização aproximada (arredondada a cerca de 1 km, sem nenhum identificador) é enviada ao Instituto Meteorológico da Noruega (MET Norway) para obter a previsão.',
   'legal.p4.h': 'Notificações',
   'legal.p4.b': 'Se você permitir, o app mostra notificações do sistema neste computador para alarmes e lembretes. Não são usadas notificações push remotas.',
   'legal.p5.h': 'Controle dos seus dados',

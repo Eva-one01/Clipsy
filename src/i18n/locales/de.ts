@@ -333,7 +333,7 @@ const de: Dict = {
   'legal.p2.h': 'Wo deine Informationen gespeichert werden',
   'legal.p2.b': 'Alles, was du eingibst (Termine, Aufgaben, Ideen, Ziele, Wecker, Erinnerungen, Uhren und Buchungen), wird auf diesem Computer gespeichert. Mit aktivierter Synchronisierung reist es Ende-zu-Ende-verschlüsselt und nur du kannst es lesen.',
   'legal.p3.h': 'Internetverbindung',
-  'legal.p3.b': 'Clipsy funktioniert offline. Es verbindet sich nur, um die Lizenz zu prüfen (bei der Aktivierung, danach höchstens einmal täglich), nach Updates zu suchen und, wenn aktiviert, Fehlerberichte zu senden. Wenn du die Synchronisierung aktivierst, reisen deine Daten Ende-zu-Ende-verschlüsselt mit einer Passphrase, die nur du kennst: Unser Server kann sie nicht lesen.',
+  'legal.p3.b': 'Clipsy funktioniert offline. Es verbindet sich nur, um die Lizenz zu prüfen (bei der Aktivierung, danach höchstens einmal täglich), nach Updates zu suchen und, wenn aktiviert, Fehlerberichte zu senden. Wenn du die Synchronisierung aktivierst, reisen deine Daten Ende-zu-Ende-verschlüsselt mit einer Passphrase, die nur du kennst: Unser Server kann sie nicht lesen. Wenn du das Wetter in „Heute“ aktivierst, wird dein ungefährer Standort (auf etwa 1 km gerundet, ohne Kennung) an das Norwegische Meteorologische Institut (MET Norway) gesendet, um die Vorhersage abzurufen.',
   'legal.p4.h': 'Mitteilungen',
   'legal.p4.b': 'Wenn du es erlaubst, zeigt die App auf diesem Computer Systemmitteilungen für Wecker und Erinnerungen. Es werden keine Push-Mitteilungen aus der Ferne verwendet.',
   'legal.p5.h': 'Kontrolle über deine Daten',

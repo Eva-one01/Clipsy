@@ -333,7 +333,7 @@ const en: Dict = {
   'legal.p2.h': 'Where your information is stored',
   'legal.p2.b': 'Everything you enter (events, tasks, ideas, goals, alarms, reminders, clocks and transactions) is stored on this computer. If you turn on sync, it travels end-to-end encrypted and no one but you can read it.',
   'legal.p3.h': 'Internet connection',
-  'legal.p3.b': 'Clipsy works offline. It only connects to validate your license (when you activate it and then at most once a day), to check for updates and, if enabled, to send error reports. If you turn on sync, your data travels end-to-end encrypted with a passphrase only you know: our server cannot read it.',
+  'legal.p3.b': 'Clipsy works offline. It only connects to validate your license (when you activate it and then at most once a day), to check for updates and, if enabled, to send error reports. If you turn on sync, your data travels end-to-end encrypted with a passphrase only you know: our server cannot read it. If you turn on the weather in Today, your approximate location (rounded to about 1 km, with no identifier) is sent to the Norwegian Meteorological Institute (MET Norway) to get the forecast.',
   'legal.p4.h': 'Notifications',
   'legal.p4.b': 'If you allow it, the app shows system notifications on this computer for alarms and reminders. No remote push notifications are used.',
   'legal.p5.h': 'Control of your data',

@@ -333,7 +333,7 @@ const fr: Dict = {
   'legal.p2.h': 'Où sont stockées vos informations',
   'legal.p2.b': 'Tout ce que vous saisissez (événements, tâches, idées, objectifs, alarmes, rappels, horloges et opérations) est stocké sur cet ordinateur. Si vous activez la synchronisation, il est chiffré de bout en bout et vous seul pouvez le lire.',
   'legal.p3.h': 'Connexion Internet',
-  'legal.p3.b': 'Clipsy fonctionne hors ligne. Il ne se connecte que pour valider votre licence (à l’activation puis au plus une fois par jour), chercher des mises à jour et, s’ils sont activés, envoyer des rapports d’erreur. Si vous activez la synchronisation, vos données sont chiffrées de bout en bout avec une phrase que vous seul connaissez : notre serveur ne peut pas les lire.',
+  'legal.p3.b': 'Clipsy fonctionne hors ligne. Il ne se connecte que pour valider votre licence (à l’activation puis au plus une fois par jour), chercher des mises à jour et, s’ils sont activés, envoyer des rapports d’erreur. Si vous activez la synchronisation, vos données sont chiffrées de bout en bout avec une phrase que vous seul connaissez : notre serveur ne peut pas les lire. Si vous activez la météo dans Aujourd’hui, votre position approximative (arrondie à environ 1 km, sans aucun identifiant) est envoyée à l’Institut météorologique norvégien (MET Norway) pour obtenir les prévisions.',
   'legal.p4.h': 'Notifications',
   'legal.p4.b': 'Si vous l’autorisez, l’app affiche des notifications système sur cet ordinateur pour les alarmes et rappels. Aucune notification push à distance n’est utilisée.',
   'legal.p5.h': 'Maîtrise de vos données',
