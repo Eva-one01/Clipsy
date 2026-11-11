@@ -835,6 +835,9 @@ const en: Dict = {
   'cal.deleteTitle': 'Delete?',
   'cal.deleteOne': 'Only this time',
   'cal.deleteAll': 'The whole series',
+  'weather.search': 'Type to search for a city…',
+  'weather.noCity': 'No cities with that name.',
+  'weather.fromTz': 'Windows didn’t give your location, so {city} is used based on your computer’s time zone. For more accuracy, turn on location in Settings → Privacy → Location, or pick your city.',
 };
 
 export default en;

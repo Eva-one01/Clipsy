@@ -835,6 +835,9 @@ const pt: Dict = {
   'cal.deleteTitle': 'Excluir?',
   'cal.deleteOne': 'Só desta vez',
   'cal.deleteAll': 'A série inteira',
+  'weather.search': 'Digite para buscar uma cidade…',
+  'weather.noCity': 'Nenhuma cidade com esse nome.',
+  'weather.fromTz': 'O Windows não informou sua localização: usamos {city}, pelo fuso horário do seu computador. Para mais precisão, ative a localização em Configurações → Privacidade → Localização, ou escolha sua cidade.',
 };
 
 export default pt;
