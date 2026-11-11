@@ -835,6 +835,9 @@ const de: Dict = {
   'cal.deleteTitle': 'Löschen?',
   'cal.deleteOne': 'Nur dieses Mal',
   'cal.deleteAll': 'Die ganze Serie',
+  'weather.search': 'Tippen, um eine Stadt zu suchen…',
+  'weather.noCity': 'Keine Stadt mit diesem Namen.',
+  'weather.fromTz': 'Windows hat keinen Standort geliefert: Es wird {city} nach der Zeitzone deines Computers verwendet. Für mehr Genauigkeit schalte die Position unter Einstellungen → Datenschutz → Position ein oder wähle deine Stadt.',
 };
 
 export default de;

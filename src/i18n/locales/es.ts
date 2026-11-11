@@ -859,6 +859,9 @@ const es = {
   'cal.deleteTitle': '¿Eliminar?',
   'cal.deleteOne': 'Solo esta vez',
   'cal.deleteAll': 'Toda la serie',
+  'weather.search': 'Escribe para buscar una ciudad…',
+  'weather.noCity': 'No hay ciudades con ese nombre.',
+  'weather.fromTz': 'Windows no dio tu ubicación: se usa {city}, según la zona horaria de tu equipo. Para más precisión, activa la ubicación en Configuración → Privacidad → Ubicación, o elige tu ciudad.',
 };
 
 export default es;

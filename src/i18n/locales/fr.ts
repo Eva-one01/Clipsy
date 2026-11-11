@@ -835,6 +835,9 @@ const fr: Dict = {
   'cal.deleteTitle': 'Supprimer ?',
   'cal.deleteOne': 'Seulement cette fois',
   'cal.deleteAll': 'Toute la série',
+  'weather.search': 'Tapez pour chercher une ville…',
+  'weather.noCity': 'Aucune ville de ce nom.',
+  'weather.fromTz': 'Windows n’a pas donné votre position : on utilise {city}, d’après le fuseau horaire de votre ordinateur. Pour plus de précision, activez la localisation dans Paramètres → Confidentialité → Localisation, ou choisissez votre ville.',
 };
 
 export default fr;
