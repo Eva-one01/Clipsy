@@ -6,6 +6,8 @@ export const TABS: Record<string, { label: TKey; icon: IconName }> = {
   index: { label: 'tabs.today', icon: 'sun' },
   calendar: { label: 'tabs.calendar', icon: 'calendar' },
   lists: { label: 'tabs.lists', icon: 'check-square' },
+  ideas: { label: 'tabs.ideas', icon: 'feather' },
+  goals: { label: 'tabs.goals', icon: 'target' },
   finance: { label: 'tabs.finance', icon: 'pie-chart' },
   more: { label: 'tabs.more', icon: 'grid' },
 };

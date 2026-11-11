@@ -103,6 +103,8 @@ export function CommandPalette() {
       ['sun', 'tabs.today', '/', true],
       ['calendar', 'tabs.calendar', '/calendar', true],
       ['check-square', 'tabs.lists', '/lists', true],
+      ['feather', 'tabs.ideas', '/ideas', true],
+      ['target', 'tabs.goals', '/goals', true],
       ['pie-chart', 'tabs.finance', '/finance', true],
       ['clock', 'more.clocks', '/clocks'],
       ['bell', 'more.alarms', '/alarms'],
@@ -160,7 +162,7 @@ export function CommandPalette() {
         icon: 'zap' as IconName,
         title: x.text,
         group: 'qa.groupIdeas' as TKey,
-        run: go('/lists', true),
+        run: go('/ideas', true),
         hay: norm(x.text),
       })),
       ...recurring.map((x) => ({

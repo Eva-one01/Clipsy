@@ -20,6 +20,8 @@ const LABEL: Record<string, TKey | [TKey, TKey]> = {
   'nav:index': ['sc.goTo', 'tabs.today'],
   'nav:calendar': ['sc.goTo', 'tabs.calendar'],
   'nav:lists': ['sc.goTo', 'tabs.lists'],
+  'nav:ideas': ['sc.goTo', 'tabs.ideas'],
+  'nav:goals': ['sc.goTo', 'tabs.goals'],
   'nav:finance': ['sc.goTo', 'tabs.finance'],
   'nav:more': ['sc.goTo', 'tabs.more'],
   'open:settings': 'desk.sc.settings',

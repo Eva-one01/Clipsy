@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { FadeIn, FadeInDown, SlideInLeft, SlideInRight } from 'react-native-reanimated';
 import { EventRow, TaskRow } from '@/components/rows';
 import { Screen } from '@/components/Screen';
+import { MonthYearTitle } from '@/components/MonthYearTitle';
 import { WeekGrid } from '@/components/WeekGrid';
 import { Segmented } from '@/components/Segmented';
 import { Text } from '@/components/Text';
@@ -44,9 +45,6 @@ export default function CalendarScreen() {
   const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [selected, setSelected] = useState(todayKey());
   const [dir, setDir] = useState<1 | -1>(1);
-  // Selector de mes y año (al pulsar el título): saltar a cualquier fecha sin pasar mes a mes.
-  const [picker, setPicker] = useState(false);
-  const [pickYear, setPickYear] = useState(() => new Date().getFullYear());
 
   const days = useMemo(() => monthMatrix(month.getFullYear(), month.getMonth(), weekStartsMonday), [month, weekStartsMonday]);
 
@@ -69,6 +67,12 @@ export default function CalendarScreen() {
     return Array.from({ length: 7 }, (_, i) => addDays(start, i));
   }, [selected, weekStartsMonday]);
   const weekKey = toKey(weekDays[0]);
+  const draggingShift = useRef(false);
+  const [weekAnim, setWeekAnim] = useState(weekKey);
+  useEffect(() => {
+    if (!draggingShift.current) setWeekAnim(weekKey);
+    draggingShift.current = false;
+  }, [weekKey]);
 
   const dayEvents = useMemo(() => eventsOn(events, selected), [events, selected]);
   const dayTasks = useMemo(() => tasks.filter((x) => x.due === selected), [tasks, selected]);
@@ -82,17 +86,12 @@ export default function CalendarScreen() {
     } else setMonth((m) => addMonths(m, n));
   };
 
-  const togglePicker = () => {
-    setPickYear(month.getFullYear());
-    setPicker((v) => !v);
-  };
-
-  const pickMonth = (m: number) => {
-    const d = new Date(pickYear, m, 1);
+  // Mes y año del título: cada uno se elige en una ventanita (MonthYearTitle) sin mover la pantalla.
+  const pickMonth = (y: number, m: number) => {
+    const d = new Date(y, m, 1);
     setDir(d < month ? -1 : 1);
     setMonth(d);
     if (view === 'week') setSelected(toKey(d));
-    setPicker(false);
   };
 
   const goToday = () => {
@@ -124,9 +123,13 @@ export default function CalendarScreen() {
       maxWidth={isDesktop ? 1180 : undefined}
       title={formatMonthTitle(view === 'week' ? weekDays[0] : month)}
       subtitle={view === 'week' ? `${formatShortDate(weekDays[0])} – ${formatShortDate(weekDays[6])}` : t('cal.subtitle')}
-      onTitlePress={togglePicker}
-      titleOpen={picker}
-      titleHint={t('cal.pickMonth')}
+      titleNode={
+        <MonthYearTitle
+          month={(view === 'week' ? weekDays[0] : month).getMonth()}
+          year={(view === 'week' ? weekDays[0] : month).getFullYear()}
+          onChange={pickMonth}
+        />
+      }
       actions={
         <>
           <IconButton icon="chevron-left" label={view === 'week' ? t('cal.prevWeek') : t('common.prevMonth')} onPress={() => shift(-1)} />
@@ -135,36 +138,6 @@ export default function CalendarScreen() {
         </>
       }
     >
-      {picker ? (
-        <Animated.View entering={FadeInDown.duration(motion.base)} style={[styles.picker, { backgroundColor: c.surface, borderColor: c.border }]}>
-          <View style={styles.pickerHead}>
-            <IconButton icon="chevron-left" label={t('cal.prevYear')} onPress={() => setPickYear((y) => y - 1)} />
-            <Text variant="heading" tabular>
-              {pickYear}
-            </Text>
-            <IconButton icon="chevron-right" label={t('cal.nextYear')} onPress={() => setPickYear((y) => y + 1)} />
-          </View>
-          <View style={styles.months}>
-            {monthNames('short').map((name, m) => {
-              const isCur = pickYear === month.getFullYear() && m === month.getMonth();
-              const isNow = pickYear === now.getFullYear() && m === now.getMonth();
-              return (
-                <Pressable
-                  key={m}
-                  onPress={() => pickMonth(m)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: isCur }}
-                  style={[styles.monthBtn, { backgroundColor: isCur ? c.accent : 'transparent', borderColor: isNow && !isCur ? c.accent : c.border }]}
-                >
-                  <Text variant="bodyStrong" style={{ color: isCur ? c.onAccent : isNow ? c.accent : c.text }}>
-                    {name}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </Animated.View>
-      ) : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md, marginBottom: space.lg }}>
         <View style={{ width: 240 }}>
           <Segmented<'month' | 'week'>
@@ -183,8 +156,15 @@ export default function CalendarScreen() {
         ) : null}
       </View>
       {view === 'week' ? (
-        <Animated.View key={weekKey} entering={(dir === 1 ? SlideInRight : SlideInLeft).duration(motion.base)}>
+        <Animated.View key={weekAnim} entering={(dir === 1 ? SlideInRight : SlideInLeft).duration(motion.base)}>
           <WeekGrid
+            onShiftWeek={(n) => {
+              // Cambio de semana arrastrando: sin animación ni volver a montar la cuadrícula (el arrastre sigue).
+              draggingShift.current = true;
+              const d = addDays(fromKey(selected), 7 * n);
+              setSelected(toKey(d));
+              setMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+            }}
             days={weekDays}
             today={today}
             now={now}

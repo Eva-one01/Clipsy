@@ -20,6 +20,8 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" />
       <Tabs.Screen name="calendar" />
       <Tabs.Screen name="lists" />
+      <Tabs.Screen name="ideas" />
+      <Tabs.Screen name="goals" />
       <Tabs.Screen name="finance" />
       <Tabs.Screen name="more" />
     </Tabs>

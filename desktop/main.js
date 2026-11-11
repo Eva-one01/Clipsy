@@ -12,6 +12,7 @@ const sync = require('./sync');
 const voice = require('./voice');
 const importer = require('./importer');
 const shortcuts = require('./shortcuts');
+const weather = require('./weather');
 const backups = require('./backups');
 
 const APP_DIR = path.join(__dirname, 'app');
@@ -364,6 +365,8 @@ function buildMenu() {
         { label: s.today, ...acc('nav:index'), click: () => send('nav:index') },
         { label: s.calendar, ...acc('nav:calendar'), click: () => send('nav:calendar') },
         { label: s.lists, ...acc('nav:lists'), click: () => send('nav:lists') },
+        { label: s.ideas, ...acc('nav:ideas'), click: () => send('nav:ideas') },
+        { label: s.goals, ...acc('nav:goals'), click: () => send('nav:goals') },
         { label: s.finance, ...acc('nav:finance'), click: () => send('nav:finance') },
         { label: s.more, ...acc('nav:more'), click: () => send('nav:more') },
       ],
@@ -433,6 +436,8 @@ function registerIpc() {
   ipcMain.on('razor:focus', showWindow);
   ipcMain.on('razor:open-mini', openMini);
   ipcMain.on('razor:hide-quick', () => quickWin?.hide());
+  // Clima de «Hoy» (solo si la persona lo activa; ver desktop/weather.js)
+  weather.register(ipcMain);
   // Atajos configurables
   ipcMain.handle('razor:shortcuts:list', () => shortcuts.list());
   ipcMain.handle('razor:shortcuts:set', (_e, action, accel) => {

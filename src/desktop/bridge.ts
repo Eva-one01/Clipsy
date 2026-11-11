@@ -5,6 +5,8 @@ export type MenuAction =
   | 'nav:index'
   | 'nav:calendar'
   | 'nav:lists'
+  | 'nav:ideas'
+  | 'nav:goals'
   | 'nav:finance'
   | 'nav:more'
   | 'new:task'
@@ -89,6 +91,11 @@ export interface SyncResponse {
   updatedAt?: string;
 }
 
+/** Clima: temperatura actual, símbolo de MET Norway («clearsky_day», «rain»…) y mínima/máxima de 24 h. */
+export type WeatherResult =
+  | { ok: true; lat: number; lon: number; temp: number | null; symbol: string; min: number | null; max: number | null; at: number }
+  | { ok: false; error: 'denied' | 'unknown' | 'unsupported' | 'offline' };
+
 /** Un atajo configurable (desktop/shortcuts.js). `accel` vacío = sin atajo; `busy` = otro programa lo tiene. */
 export interface ShortcutInfo {
   action: string;
@@ -140,6 +147,8 @@ export interface RazorDesktop {
   onQuickOpen?(cb: () => void): () => void;
   /** Atajo de voz (Ctrl+Shift+D): la barra rápida empieza o deja de escuchar. */
   onQuickVoice?(cb: () => void): () => void;
+  /** Clima de «Hoy» (desktop/weather.js). */
+  weather?: { get(opts: { source: 'auto' } | { source: 'city'; lat: number; lon: number }): Promise<WeatherResult> };
   /** Importar: diálogo del sistema + lectura del archivo en el equipo (desktop/importer.js). */
   importer?: {
     pick(lang: string): Promise<ImportFile>;

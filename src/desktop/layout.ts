@@ -1,9 +1,10 @@
 import { Platform, useWindowDimensions } from 'react-native';
 
 /** Ancho de la barra lateral de navegación en escritorio. */
-export const SIDEBAR_WIDTH = 232;
+export const SIDEBAR_WIDTH = 256;
 /** Ancho máximo del contenido: líneas cómodas de leer en monitores grandes. */
-export const CONTENT_MAX_WIDTH = 760;
+// Ancho de lectura en pantallas grandes: más ancho para aprovechar el espacio (la letra también es más grande).
+export const CONTENT_MAX_WIDTH = 1040;
 /** A partir de este ancho de ventana se usa el diseño de escritorio. */
 const DESKTOP_BREAKPOINT = 860;
 

@@ -1,10 +1,10 @@
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
-import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type ViewProps } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type ViewProps } from 'react-native';
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { Checkbox } from '@/components/Checkbox';
 import { Text } from '@/components/Text';
-import { Icon } from '@/components/ui';
+import { Icon, type IconName } from '@/components/ui';
 import { useT } from '@/i18n/useT';
 import { addDays, eventsOn, formatClock, formatLongDate, formatTime, fromKey, minutesToTime, timeToMinutes, toKey, weekdayName } from '@/lib/date';
 import { showDialog } from '@/lib/dialog';
@@ -26,6 +26,12 @@ const CHIP_H = 26;
 
 type Kind = 'event' | 'reminder' | 'task';
 type Area = 'grid' | 'allday';
+
+/** Lo copiado con clic derecho → Copiar (se pega en otro hueco o en otra semana). */
+let copied: Item | null = null;
+
+/** Menú del clic derecho: sobre un elemento o sobre un hueco vacío. */
+type Menu = { x: number; y: number; item?: Item; slot?: { day: number; start: number; area: 'grid' | 'allday' } };
 
 interface Item {
   key: string;
@@ -119,10 +125,23 @@ function layoutDay(items: Item[]) {
  * de todo el día van en la franja de arriba; una tarea pasa de una zona a la otra arrastrándola.
  * Cada cambio se puede deshacer, y arrastrar sobre un hueco vacío crea un evento con ese rango.
  */
-export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today: string; now: Date; onPickDay: (key: string) => void }) {
+export function WeekGrid({
+  days,
+  today,
+  now,
+  onPickDay,
+  onShiftWeek,
+}: {
+  days: Date[];
+  today: string;
+  now: Date;
+  onPickDay: (key: string) => void;
+  /** Al arrastrar algo contra el borde derecho (o izquierdo), se pasa a la semana siguiente (o anterior). */
+  onShiftWeek?: (n: 1 | -1) => void;
+}) {
   const { c } = useTheme();
   const { t } = useT();
-  const { height: winH } = useWindowDimensions();
+  const { height: winH, width: winW } = useWindowDimensions();
   const events = useStore((s) => s.events);
   const tasks = useStore((s) => s.tasks);
   const reminders = useStore((s) => s.reminders);
@@ -134,8 +153,21 @@ export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today:
   const updateTask = useStore((s) => s.updateTask);
   const toggleTask = useStore((s) => s.toggleTask);
   const updateReminder = useStore((s) => s.updateReminder);
+  const addTask = useStore((s) => s.addTask);
+  const deleteTask = useStore((s) => s.deleteTask);
+  const addReminder = useStore((s) => s.addReminder);
+  const deleteReminder = useStore((s) => s.deleteReminder);
+  const [menu, setMenu] = useState<Menu | null>(null);
 
   const keys = useMemo(() => days.map(toKey), [days]);
+  // Los manejadores del arrastre se crean al empezar: leen la semana actual de aquí (puede cambiar mientras tanto).
+  const keysRef = useRef(keys);
+  keysRef.current = keys;
+  const shiftRef = useRef(onShiftWeek);
+  shiftRef.current = onShiftWeek;
+  const pointer = useRef({ x: 0, y: 0 });
+  const edgeTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const edgeSince = useRef(0);
 
   const { timed, allDay } = useMemo(() => {
     const timed: Item[][] = keys.map(() => []);
@@ -179,6 +211,15 @@ export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today:
   const createRef = useRef<{ x0: number; y0: number; day: number; anchor: number; moved: boolean; area: Area } | null>(null);
   const [undo, setUndo] = useState<{ msg: string; run: () => void; id: number } | null>(null);
 
+  const wrapRef = useRef<View>(null);
+  useEffect(() => {
+    const node = el(wrapRef.current) as HTMLElement | null;
+    if (!node) return;
+    const block = (e: Event) => e.preventDefault();
+    node.addEventListener('contextmenu', block);
+    return () => node.removeEventListener('contextmenu', block);
+  }, []);
+
   // Al abrir: la cuadrícula empieza un par de horas antes de la hora actual.
   useEffect(() => {
     const y = Math.max(0, (new Date().getHours() - 2) * HOUR_H - 10);
@@ -217,9 +258,9 @@ export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today:
 
   const commit = (it: Item, pos: Pos) => {
     const { day, start, dur, area, mode } = pos;
-    const newKey = keys[day];
+    const newKey = keysRef.current[day];
     const toAllDay = area === 'allday';
-    if (day === it.day && toAllDay === it.allDay && (toAllDay || (start === it.start && dur === it.dur))) return;
+    if (newKey === it.occ && toAllDay === it.allDay && (toAllDay || (start === it.start && dur === it.dur))) return;
     const msg = t(mode === 'resize' ? 'cal.undoResized' : 'cal.undoMoved', { x: it.title });
 
     if (it.kind === 'task') {
@@ -287,6 +328,7 @@ export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today:
   const onMove = (ev: PointerEvent) => {
     const d = dragRef.current;
     if (!d) return;
+    pointer.current = { x: ev.clientX, y: ev.clientY };
     if (!d.moved && Math.hypot(ev.clientX - d.x0, ev.clientY - d.y0) < 4) return;
     d.moved = true;
     document.body.style.userSelect = 'none';
@@ -326,6 +368,9 @@ export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today:
   const onUp = () => {
     window.removeEventListener('pointermove', onMove);
     window.removeEventListener('pointerup', onUp);
+    if (edgeTimer.current) clearInterval(edgeTimer.current);
+    edgeTimer.current = null;
+    edgeSince.current = 0;
     document.body.style.userSelect = '';
     document.body.style.cursor = '';
     const d = dragRef.current;
@@ -340,6 +385,7 @@ export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today:
 
   const startDrag = (it: Item, e: PE, mode: 'move' | 'resize' = 'move') => {
     e.stopPropagation();
+    if (e.nativeEvent.button === 2) return setMenu({ x: e.nativeEvent.clientX, y: e.nativeEvent.clientY, item: it });
     if ((e.nativeEvent.button ?? 0) !== 0) return;
     let grab = 0;
     if (!it.allDay) {
@@ -347,8 +393,28 @@ export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today:
       if (box) grab = ((e.nativeEvent.clientY - box.top) / HOUR_H) * 60 - it.start;
     }
     dragRef.current = { item: it, x0: e.nativeEvent.clientX, y0: e.nativeEvent.clientY, grab, moved: false, mode };
+    pointer.current = { x: e.nativeEvent.clientX, y: e.nativeEvent.clientY };
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
+    // Mantenerlo contra el borde derecho o izquierdo un momento cambia de semana (y se puede seguir arrastrando).
+    if (mode === 'move' && shiftRef.current) {
+      edgeTimer.current = setInterval(() => {
+        const d = dragRef.current;
+        const box = el(gridRef.current)?.getBoundingClientRect();
+        if (!d || !d.moved || !box) return;
+        const x = pointer.current.x;
+        const dir = x > box.right - 18 ? 1 : x < box.left + GUTTER - 6 ? -1 : 0;
+        if (!dir) {
+          edgeSince.current = 0;
+          return;
+        }
+        if (!edgeSince.current) edgeSince.current = Date.now();
+        else if (Date.now() - edgeSince.current > 650) {
+          edgeSince.current = Date.now() + 250; // una pausa antes de la siguiente semana
+          shiftRef.current?.(dir as 1 | -1);
+        }
+      }, 100);
+    }
   };
 
   // Hueco vacío: clic = evento nuevo a esa hora; arrastrar = evento nuevo con ese rango.
@@ -395,9 +461,13 @@ export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today:
   };
 
   const bgPointerDown = (e: PE, area: Area) => {
-    if ((e.nativeEvent.button ?? 0) !== 0) return;
     const box = el(area === 'grid' ? gridRef.current : allDayRef.current)?.getBoundingClientRect();
     if (!box || e.nativeEvent.clientX - box.left < GUTTER) return;
+    if (e.nativeEvent.button === 2) {
+      const start = area === 'grid' ? Math.floor(minuteAt(e.nativeEvent.clientY, box) / 30) * 30 : 0;
+      return setMenu({ x: e.nativeEvent.clientX, y: e.nativeEvent.clientY, slot: { day: dayAt(e.nativeEvent.clientX, box), start, area } });
+    }
+    if ((e.nativeEvent.button ?? 0) !== 0) return;
     createRef.current = {
       x0: e.nativeEvent.clientX,
       y0: e.nativeEvent.clientY,
@@ -410,11 +480,97 @@ export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today:
     window.addEventListener('pointerup', onCreateUp);
   };
 
+  /** Pega (o duplica) un elemento en un día y hora: crea una copia nueva, el original no cambia. */
+  const pasteAt = async (src: Item, day: number, start: number, area: 'grid' | 'allday') => {
+    const date = keys[day];
+    const timed = area === 'grid';
+    const dur = src.allDay ? 60 : src.dur;
+    const end = Math.min(start + dur, DAY_MIN - 1);
+    if (src.kind === 'event' && src.ev) {
+      const { id: _id, notificationIds: _n, ...rest } = src.ev;
+      const known = new Set(useStore.getState().events.map((e) => e.id));
+      await addEvent({
+        ...rest,
+        date,
+        ...(timed ? { allDay: false, start: minutesToTime(start), end: minutesToTime(end) } : { allDay: true }),
+        repeat: 'none',
+        interval: 1,
+        until: null,
+        exceptions: [],
+      });
+      const created = useStore.getState().events.find((e) => !known.has(e.id));
+      offerUndo(t('cal.undoPasted', { x: src.title }), () => created && deleteEvent(created.id));
+    } else if (src.kind === 'task') {
+      const prev = useStore.getState().tasks.find((x) => x.id === src.id);
+      const known = new Set(useStore.getState().tasks.map((x) => x.id));
+      addTask({ title: src.title, priority: prev?.priority ?? 0, goalId: prev?.goalId ?? null, notes: prev?.notes ?? '', due: date, ...(timed ? { time: minutesToTime(start), duration: dur } : {}) });
+      const created = useStore.getState().tasks.find((x) => !known.has(x.id));
+      offerUndo(t('cal.undoPasted', { x: src.title }), () => created && deleteTask(created.id));
+    } else if (src.kind === 'reminder') {
+      const d = fromKey(date);
+      d.setHours(Math.floor(start / 60), start % 60, 0, 0);
+      const known = new Set(useStore.getState().reminders.map((r) => r.id));
+      await addReminder({ title: src.title, at: d.getTime() });
+      const created = useStore.getState().reminders.find((r) => !known.has(r.id));
+      offerUndo(t('cal.undoPasted', { x: src.title }), () => created && deleteReminder(created.id));
+    }
+  };
+
+  const remove = (it: Item) => {
+    const run = async () => {
+      if (it.kind === 'task') deleteTask(it.id);
+      else if (it.kind === 'reminder') await deleteReminder(it.id);
+      else await deleteEvent(it.id);
+    };
+    if (it.kind === 'event' && it.ev && it.ev.repeat !== 'none') {
+      return showDialog(t('cal.deleteTitle'), it.title, [
+        { text: t('cal.deleteOne'), onPress: () => skipOccurrence(it.id, it.occ) },
+        { text: t('cal.deleteAll'), style: 'destructive', onPress: run },
+        { text: t('common.cancel'), style: 'cancel' },
+      ]);
+    }
+    showDialog(t('cal.deleteTitle'), it.title, [
+      { text: t('common.delete'), style: 'destructive', onPress: run },
+      { text: t('common.cancel'), style: 'cancel' },
+    ]);
+  };
+
+  const menuItems = (m: Menu): { icon: IconName; label: string; run: () => void; danger?: boolean; disabled?: boolean }[] => {
+    if (m.item) {
+      const it = m.item;
+      const area = it.allDay ? 'allday' : 'grid';
+      return [
+        { icon: 'edit-2', label: t('cal.menuEdit'), run: () => open(it) },
+        { icon: 'copy', label: t('cal.menuCopy'), run: () => (copied = it) },
+        { icon: 'layers', label: t('cal.menuDuplicate'), run: () => pasteAt(it, it.day, it.start, area) },
+        ...(it.day < 6 ? [{ icon: 'chevron-right' as IconName, label: t('cal.menuNextDay'), run: () => pasteAt(it, it.day + 1, it.start, area) }] : []),
+        ...(it.kind === 'task' ? [{ icon: 'check-circle' as IconName, label: it.done ? t('cal.menuUndone') : t('cal.menuDone'), run: () => toggleTask(it.id) }] : []),
+        { icon: 'trash-2', label: t('common.delete'), run: () => remove(it), danger: true },
+      ];
+    }
+    const slot = m.slot!;
+    return [
+      {
+        icon: 'plus',
+        label: t('cal.newEvent'),
+        run: () => router.push({ pathname: '/form/event', params: { date: keys[slot.day], ...(slot.area === 'grid' ? { start: minutesToTime(slot.start) } : {}) } }),
+      },
+      {
+        icon: 'clipboard',
+        label: copied ? t('cal.menuPaste', { x: copied.title }) : t('cal.menuPasteEmpty'),
+        run: () => copied && pasteAt(copied, slot.day, slot.start, copied.kind === 'event' && copied.allDay ? 'allday' : slot.area),
+        disabled: !copied,
+      },
+    ];
+  };
+
   const nowMin = now.getHours() * 60 + now.getMinutes();
   const todayIdx = keys.indexOf(today);
   // Hueco extra en la franja de arriba si se está soltando ahí una tarea que tenía hora.
-  const ghostAllDay = drag && drag.area === 'allday' && !drag.item.allDay ? drag : null;
-  const ghostGrid = drag && drag.area === 'grid' && drag.item.allDay ? drag : null;
+  // Si se pasó a otra semana, el original no está en esta: se dibuja la copia que se arrastra.
+  const visible = !drag || timed.some((l) => l.some((x) => x.key === drag.key)) || allDay.some((l) => l.some((x) => x.key === drag.key));
+  const ghostAllDay = drag && (drag.area === 'allday' && (!drag.item.allDay || !visible)) ? drag : null;
+  const ghostGrid = drag && (drag.area === 'grid' && (drag.item.allDay || !visible)) ? drag : null;
   const rowMax = Math.max(1, ...allDay.map((l, i) => l.length + (ghostAllDay && ghostAllDay.day === i ? 1 : 0)));
   // La semana cabe en la ventana: solo se desplazan las horas.
   const gridH = Math.max(320, winH - 450 - Math.max(1, ...allDay.map((l) => l.length)) * CHIP_H);
@@ -544,7 +700,7 @@ export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today:
   ));
 
   return (
-    <View>
+    <View ref={wrapRef}>
       <View style={[styles.wrap, { backgroundColor: c.surface, borderColor: c.border }]}>
         {/* Cabecera: días de la semana (clic: ver ese día en el mes) */}
         <View style={[styles.head, { borderBottomColor: c.border }]}>
@@ -647,6 +803,35 @@ export function WeekGrid({ days, today, now, onPickDay }: { days: Date[]; today:
         </ScrollView>
       </View>
 
+      {/* Clic derecho: editar, copiar, pegar, duplicar, eliminar */}
+      {menu ? (
+        <Modal transparent visible animationType="none" onRequestClose={() => setMenu(null)}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setMenu(null)} accessibilityLabel={t('common.close')} />
+          <Animated.View
+            entering={FadeInDown.duration(motion.fast)}
+            style={[styles.menu, { left: Math.min(menu.x, winW - 250), top: Math.min(menu.y, winH - 280), backgroundColor: c.elevated, borderColor: c.borderStrong }]}
+          >
+            {menuItems(menu).map((m) => (
+              <Pressable
+                key={m.label}
+                disabled={m.disabled}
+                onPress={() => {
+                  setMenu(null);
+                  m.run();
+                }}
+                accessibilityRole="menuitem"
+                style={(st) => [styles.menuItem, { backgroundColor: (st as { hovered?: boolean }).hovered && !m.disabled ? c.surfaceAlt : 'transparent', opacity: m.disabled ? 0.45 : 1 }]}
+              >
+                <Icon name={m.icon} size={16} color={m.danger ? c.danger : c.textMuted} />
+                <Text variant="body" numberOfLines={1} style={{ flex: 1, color: m.danger ? c.danger : c.text }}>
+                  {m.label}
+                </Text>
+              </Pressable>
+            ))}
+          </Animated.View>
+        </Modal>
+      ) : null}
+
       {/* Deshacer el último cambio hecho arrastrando */}
       {undo ? (
         <Animated.View
@@ -682,6 +867,18 @@ const webResize = { cursor: 'ns-resize' } as object;
 const webLift = { boxShadow: '0 8px 24px rgba(0,0,0,0.22)' } as object;
 
 const styles = StyleSheet.create({
+  menu: {
+    position: 'absolute',
+    width: 240,
+    paddingVertical: 6,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    shadowColor: '#000',
+    shadowOpacity: 0.28,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+  },
+  menuItem: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.md, height: 38 },
   wrap: { borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth * 2, overflow: 'hidden' },
   head: { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: space.sm },
   headCell: { flex: 1, alignItems: 'center', gap: 2 },

@@ -6,7 +6,9 @@ import { Input } from '@/components/Input';
 import { PressableScale } from '@/components/PressableScale';
 import { ProgressRing } from '@/components/ProgressRing';
 import { EventRow, TaskRow } from '@/components/rows';
+import { ClockFace, nextClockStyle } from '@/components/ClockFace';
 import { Screen } from '@/components/Screen';
+import { WeatherWidget } from '@/components/WeatherWidget';
 import { Text } from '@/components/Text';
 import { Card, Icon, IconButton, SectionHeader, type IconName } from '@/components/ui';
 import { clockLabel } from '@/constants/cities';
@@ -37,6 +39,8 @@ export default function Today() {
   const events = useStore((s) => s.events);
   const tasks = useStore((s) => s.tasks);
   const clocks = useStore((s) => s.clocks);
+  const updateClock = useStore((s) => s.updateClock);
+  const clockStyle = useStore((s) => s.settings.clockStyle ?? 'digital');
   const reminders = useStore((s) => s.reminders);
   const use24h = useStore((s) => s.settings.use24h);
   const addTask = useStore((s) => s.addTask);
@@ -63,6 +67,7 @@ export default function Today() {
       tabbed
       title={greeting(now)}
       subtitle={formatLongDate(now)}
+      corner={<WeatherWidget />}
       actions={
         <>
           <IconButton icon="search" label={t('qa.search')} variant="filled" onPress={() => openPalette()} />
@@ -205,15 +210,27 @@ export default function Today() {
                   {formatOffset(offsetFromLocal(cl.tz, now))}
                 </Text>
               </View>
-              <Text variant="title" tabular style={{ fontWeight: '300', fontSize: 28 }}>
-                {time}
-                {ampm ? (
-                  <Text variant="caption" tone="muted">
-                    {' '}
-                    {ampm}
+              {/* Tocar la hora cambia el estilo de este reloj (digital, analógico, fino, grueso). */}
+              <PressableScale
+                onPress={() => updateClock(cl.id, { style: nextClockStyle(cl.style ?? clockStyle) })}
+                accessibilityRole="button"
+                accessibilityLabel={`${clockLabel(cl, lang)} · ${t('clocks.changeStyle')}`}
+                scaleTo={0.95}
+              >
+                {(cl.style ?? clockStyle) === 'digital' ? (
+                  <Text variant="title" tabular style={{ fontWeight: '700', fontSize: 30 }}>
+                    {time}
+                    {ampm ? (
+                      <Text variant="caption" tone="muted">
+                        {' '}
+                        {ampm}
+                      </Text>
+                    ) : null}
                   </Text>
-                ) : null}
-              </Text>
+                ) : (
+                  <ClockFace style={cl.style ?? clockStyle} h={z.hour} m={z.minute} s={z.second} use24h={use24h} />
+                )}
+              </PressableScale>
             </View>
           );
         })}
