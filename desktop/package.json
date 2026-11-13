@@ -45,6 +45,7 @@
       "backups.js",
       "errors.js",
       "i18n.js",
+      "links.js",
       "app/**/*",
       "build/icon.png",
       "build/tray.png",
