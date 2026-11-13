@@ -2,7 +2,7 @@
 // Rellénala antes de compilar los instaladores (ver README → «Licencias y actualizaciones»).
 module.exports = {
   // Tu web (la de razor-web), sin barra final. Se usa para activar licencias y abrir la cuenta.
-  siteUrl: 'https://razorweb.vercel.app',
+  siteUrl: 'https://razorgroup.dev',
 
   // Supabase → Project Settings → API (la clave "anon" es pública; nunca pongas la service_role).
   supabaseUrl: 'https://xcbmwilvzpuwaabvvvof.supabase.co',
