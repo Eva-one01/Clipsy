@@ -8,6 +8,7 @@ const { pathToFileURL } = require('node:url');
 const strings = require('./i18n');
 const license = require('./license');
 const updater = require('./updater');
+const links = require('./links');
 const sync = require('./sync');
 const voice = require('./voice');
 const importer = require('./importer');
@@ -56,8 +57,34 @@ const startHidden = process.argv.includes('--hidden') || (IS_MAC && app.getLogin
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
-  app.on('second-instance', showWindow);
+  // Un enlace clipsy:// (desde FileNote) llega como argumento de una segunda instancia (Windows) o con open-url (Mac).
+  app.on('second-instance', (_e, argv) => {
+    const link = argv.find(links.isLink);
+    if (link) handleLink(link);
+    else showWindow();
+  });
+  app.on('open-url', (e, url) => {
+    e.preventDefault();
+    handleLink(url);
+  });
   app.whenReady().then(start);
+}
+
+/* ───────────── Enlaces desde FileNote ───────────── */
+
+const pendingLinks = [];
+let linksReady = false; // la ventana ya escucha (se suscribió con onExternal)
+function handleLink(raw) {
+  const l = links.parse(raw);
+  if (!l) return;
+  pendingLinks.push(l);
+  flushLinks();
+}
+function flushLinks() {
+  if (!pendingLinks.length || !win || win.isDestroyed()) return;
+  showWindow();
+  if (!linksReady || !license.isUnlocked()) return;
+  for (const l of pendingLinks.splice(0)) win.webContents.send('razor:external', l);
 }
 
 /* ───────────── Archivos de la app ───────────── */
@@ -532,6 +559,21 @@ function registerIpc() {
     const allowed = { buy: '/account?buy=1', account: '/account', devices: '/account#license', forgot: '/account', downloads: '/account#downloads' };
     if (allowed[where] && /^https:\/\//.test(license.siteUrl)) shell.openExternal(license.siteUrl + allowed[where]);
   });
+  ipcMain.on('razor:external-ready', () => {
+    linksReady = true;
+    flushLinks();
+  });
+  // «Notas en FileNote» desde un evento: abre (o crea) su nota de reunión. Sin FileNote, su página de descarga.
+  ipcMain.handle('razor:open-filenote', (_e, ev) => {
+    const clean = (v, n) => String(v ?? '').replace(/[\u0000-\u001f]+/g, ' ').slice(0, n);
+    const q = new URLSearchParams({ title: clean(ev?.title, 200), date: /^\d{4}-\d{2}-\d{2}$/.test(ev?.date) ? ev.date : '', start: /^\d{2}:\d{2}$/.test(ev?.start) ? ev.start : '', end: /^\d{2}:\d{2}$/.test(ev?.end) ? ev.end : '', event: clean(ev?.id, 80) });
+    if (app.getApplicationNameForProtocol('filenote://')) {
+      shell.openExternal(`filenote://meeting?${q}`);
+      return 'opened';
+    }
+    shell.openExternal('https://razorgroup.dev/filenote');
+    return 'missing';
+  });
   ipcMain.handle('razor:get-open-at-login', () => app.getLoginItemSettings().openAtLogin);
   ipcMain.handle('razor:set-open-at-login', (_e, value) => {
     // En Windows se abre oculto con --hidden; en macOS se detecta con wasOpenedAtLogin.
@@ -554,6 +596,8 @@ function registerPermissions() {
 }
 
 function start() {
+  // Clipsy recibe enlaces clipsy:// (tareas y recordatorios enviados desde FileNote).
+  if (app.isPackaged) app.setAsDefaultProtocolClient('clipsy');
   registerProtocol();
   registerPermissions();
   registerIpc();
@@ -561,7 +605,13 @@ function start() {
   createWindow();
   buildMenu();
   buildTray();
-  license.init((st) => win?.webContents.send('razor:license', st));
+  license.init((st) => {
+    win?.webContents.send('razor:license', st);
+    flushLinks(); // un enlace que llegó antes de activar la licencia
+  });
+  // Abierto directamente con un enlace (la app no estaba abierta).
+  const firstLink = process.argv.find(links.isLink);
+  if (firstLink) handleLink(firstLink);
   updater.init(
     (st) => win?.webContents.send('razor:update', st),
     () => {

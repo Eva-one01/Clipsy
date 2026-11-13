@@ -1,6 +1,6 @@
 {
   "name": "razor",
-  "version": "1.4.12",
+  "version": "1.4.13",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {

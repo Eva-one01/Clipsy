@@ -1,6 +1,10 @@
 import { Platform } from 'react-native';
 
 /** Acciones que el menú y los atajos de teclado del escritorio envían a la app. */
+export type ExternalLink =
+  | { kind: 'task'; title: string; due: string | null; time: string | null; notes: string }
+  | { kind: 'reminder'; title: string; at: number };
+
 export type MenuAction =
   | 'nav:index'
   | 'nav:calendar'
@@ -170,6 +174,10 @@ export interface RazorDesktop {
   getOpenAtLogin(): Promise<boolean>;
   setOpenAtLogin(value: boolean): Promise<boolean>;
   onMenu(cb: (action: MenuAction) => void): () => void;
+  /** Tareas y recordatorios enviados desde FileNote. */
+  onExternal?(cb: (link: ExternalLink) => void): () => void;
+  /** Abre (o crea) en FileNote la nota de un evento; sin FileNote abre su página de descarga. */
+  openFileNote?(ev: { id: string; title: string; date: string; start: string; end: string }): Promise<'opened' | 'missing'>;
   openSite?(where: 'buy' | 'account' | 'devices' | 'forgot' | 'downloads'): void;
   license?: {
     get(): Promise<LicenseState>;

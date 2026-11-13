@@ -220,6 +220,7 @@ const pt: Dict = {
   'ev.atTime': 'Na hora',
   'ev.before': '{x} antes',
   'ev.notesPh': 'Local, link, detalhes…',
+  'ev.fileNote': "Notas no FileNote",
   'ev.delete': 'Excluir evento',
   'ev.deleteRepeat': 'Todas as repetições serão excluídas.',
 

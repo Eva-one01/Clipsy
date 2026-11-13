@@ -80,11 +80,19 @@ export function useDesktopIntegration(ready: boolean) {
   useEffect(() => {
     if (!desktop || !ready || !onboarded || auxWindow) return;
     const off1 = desktop.onMenu((action) => routes[action]?.());
+    // Desde FileNote: «Enviar a Clipsy» (tarea o recordatorio).
+    const off3 = desktop.onExternal?.((link) => {
+      const st = useStore.getState();
+      if (link.kind === 'task') st.addTask({ title: link.title, due: link.due, time: link.time, notes: link.notes });
+      else void st.addReminder({ title: link.title, at: link.at });
+      router.navigate(link.kind === 'task' ? '/lists' : '/');
+    });
     // Las ventanas auxiliares piden abrir algo aquí («Abrir Clipsy», un evento…).
     const off2 = desktop.onNavigate?.((route) => router.push(route as never));
     return () => {
       off1();
       off2?.();
+      off3?.();
     };
   }, [ready, onboarded]);
 

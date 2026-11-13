@@ -12,6 +12,7 @@ import { useT } from '@/i18n/useT';
 import { dateToTime, formatLead, fromKey, minutesToTime, repeatLabel, timeToDate, timeToMinutes, toKey, todayKey } from '@/lib/date';
 import { showDialog } from '@/lib/dialog';
 import { ensurePermission } from '@/lib/notifications';
+import { desktop } from '@/desktop/bridge';
 import { useStore } from '@/store';
 import type { Repeat } from '@/store/types';
 import { space, tagColors } from '@/theme/tokens';
@@ -92,6 +93,20 @@ export default function EventForm() {
       onSave={save}
       footer={
         existing ? (
+          <>
+            {desktop?.openFileNote ? (
+              // Notas de la reunión en FileNote (la misma nota cada vez que se abre este evento ese día).
+              <View style={{ marginTop: space.md }}>
+                <Button
+                  title={t('ev.fileNote')}
+                  variant="secondary"
+                  icon="file-text"
+                  full
+                  onPress={() => void desktop?.openFileNote?.({ id: existing.id, title: title.trim() || existing.title, date: occ ?? day, start: allDay ? '' : start, end: allDay ? '' : end })}
+                />
+              </View>
+            ) : null}
+            {
           existing.repeat !== 'none' && occ ? (
             // Evento que se repite abierto desde una fecha concreta: borrar solo esa o toda la serie.
             <View style={{ marginTop: space.md }}>
@@ -124,7 +139,8 @@ export default function EventForm() {
             </View>
           ) : (
             <DeleteButton label={t('ev.delete')} confirm={repeat !== 'none' ? t('ev.deleteRepeat') : t('common.sure')} onDelete={() => deleteEvent(existing.id)} />
-          )
+          )}
+          </>
         ) : null
       }
     >
