@@ -220,7 +220,6 @@ const fr: Dict = {
   'ev.atTime': 'À l’heure',
   'ev.before': '{x} avant',
   'ev.notesPh': 'Lieu, lien, détails…',
-  'ev.fileNote': "Notes dans FileNote",
   'ev.delete': 'Supprimer l’événement',
   'ev.deleteRepeat': 'Toutes les répétitions seront supprimées.',
 

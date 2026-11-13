@@ -1,7 +1,7 @@
 {
   "name": "razor-desktop",
   "productName": "Clipsy",
-  "version": "1.4.13",
+  "version": "1.4.14",
   "description": "Agenda, tareas, objetivos, alarmas, relojes mundiales y finanzas. Minimalista y privada.",
   "author": "Clipsy",
   "license": "UNLICENSED",
@@ -45,7 +45,6 @@
       "backups.js",
       "errors.js",
       "i18n.js",
-      "links.js",
       "app/**/*",
       "build/icon.png",
       "build/tray.png",
@@ -116,14 +115,6 @@
         "url": "https://github.com/Eva-one01/razor-releases/releases/latest/download"
       }
     ],
-    "afterPack": "./scripts/after-pack.js",
-    "protocols": [
-      {
-        "name": "Clipsy",
-        "schemes": [
-          "clipsy"
-        ]
-      }
-    ]
+    "afterPack": "./scripts/after-pack.js"
   }
 }

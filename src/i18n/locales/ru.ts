@@ -220,7 +220,6 @@ const ru: Dict = {
   'ev.atTime': 'В момент начала',
   'ev.before': 'За {x}',
   'ev.notesPh': 'Место, ссылка, детали…',
-  'ev.fileNote': "Заметки в FileNote",
   'ev.delete': 'Удалить событие',
   'ev.deleteRepeat': 'Будут удалены все повторения.',
 

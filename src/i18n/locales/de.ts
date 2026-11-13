@@ -220,7 +220,6 @@ const de: Dict = {
   'ev.atTime': 'Zum Beginn',
   'ev.before': '{x} vorher',
   'ev.notesPh': 'Ort, Link, Details…',
-  'ev.fileNote': "Notizen in FileNote",
   'ev.delete': 'Termin löschen',
   'ev.deleteRepeat': 'Alle Wiederholungen werden gelöscht.',
 

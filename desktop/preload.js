@@ -124,14 +124,6 @@ contextBridge.exposeInMainWorld('razorDesktop', {
       return () => ipcRenderer.removeListener('razor:update', h);
     },
   },
-  // Tareas y recordatorios enviados desde FileNote (enlaces clipsy://).
-  onExternal: (cb) => {
-    const handler = (_event, link) => cb(link);
-    ipcRenderer.on('razor:external', handler);
-    ipcRenderer.send('razor:external-ready');
-    return () => ipcRenderer.removeListener('razor:external', handler);
-  },
-  openFileNote: (ev) => ipcRenderer.invoke('razor:open-filenote', ev),
   onMenu: (cb) => {
     const handler = (_event, action) => cb(action);
     ipcRenderer.on('razor:menu', handler);

@@ -234,7 +234,6 @@ const es = {
   'ev.atTime': 'A la hora',
   'ev.before': '{x} antes',
   'ev.notesPh': 'Lugar, enlace, detalles…',
-  'ev.fileNote': "Notas en FileNote",
   'ev.delete': 'Eliminar evento',
   'ev.deleteRepeat': 'Se eliminarán todas las repeticiones.',
 
