@@ -1,7 +1,7 @@
 {
   "name": "razor-desktop",
   "productName": "Clipsy",
-  "version": "1.4.14",
+  "version": "1.4.15",
   "description": "Agenda, tareas, objetivos, alarmas, relojes mundiales y finanzas. Minimalista y privada.",
   "author": "Clipsy",
   "license": "UNLICENSED",
@@ -15,10 +15,10 @@
   },
   "dependencies": {
     "@sentry/electron": "8.3.0",
-    "electron-updater": "6.6.2"
+    "electron-updater": "6.8.11"
   },
   "devDependencies": {
-    "electron": "45.2.0",
+    "electron": "45.3.1",
     "electron-builder": "26.15.3"
   },
   "build": {
@@ -55,6 +55,14 @@
     "asarUnpack": [
       "ocr.ps1"
     ],
+    "electronFuses": {
+      "runAsNode": false,
+      "enableCookieEncryption": true,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "onlyLoadAppFromAsar": true,
+      "grantFileProtocolExtraPrivileges": false
+    },
     "win": {
       "target": [
         {

@@ -65,7 +65,8 @@ if (!app.requestSingleInstanceLock()) {
 // Política de seguridad: la app no se conecta a ningún servidor (connect-src 'self').
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  // Sin 'unsafe-inline' ni 'unsafe-eval': la interfaz es un único archivo JS propio (comprobado en 1.4.15).
+  "script-src 'self'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
@@ -542,14 +543,21 @@ function registerIpc() {
 
 /* ───────────── Arranque ───────────── */
 
-// Micrófono: solo para la propia app y solo audio (lo usa el dictado). El resto de permisos, como hasta ahora.
+// Permisos: solo los que usa la app y solo para su propio origen. Todo lo demás (ubicación, cámara,
+// pantalla, USB…) se niega. Micrófono: solo audio, para el dictado.
+const ALLOWED_PERMISSIONS = new Set(['notifications', 'clipboard-sanitized-write', 'fullscreen', 'media']);
+const fromApp = (url) => String(url || '').startsWith(ORIGIN);
 function registerPermissions() {
   session.defaultSession.setPermissionRequestHandler((_wc, permission, callback, details) => {
+    if (!ALLOWED_PERMISSIONS.has(permission) || !fromApp(details.requestingUrl)) return callback(false);
     if (permission === 'media') {
       const types = details.mediaTypes || [];
-      return callback(String(details.requestingUrl || '').startsWith(ORIGIN) && types.length > 0 && types.every((t) => t === 'audio'));
+      return callback(types.length > 0 && types.every((t) => t === 'audio'));
     }
     callback(true);
+  });
+  session.defaultSession.setPermissionCheckHandler((_wc, permission, requestingOrigin) => {
+    return ALLOWED_PERMISSIONS.has(permission) && fromApp(requestingOrigin);
   });
 }
 
